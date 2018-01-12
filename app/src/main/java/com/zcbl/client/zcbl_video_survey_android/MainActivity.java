@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import com.zcbl.client.zcbl_video_survey_library.VideoSurveyConnectTransionActivity;
 
+
 public class MainActivity extends AppCompatActivity {
 
     private TextView text;

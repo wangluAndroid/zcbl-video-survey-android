@@ -7,7 +7,7 @@ def gitUrl = 'https://github.com/wangluAndroid/zcbl-video-survey-android.git'   
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
-version = "1.0.0" //发布版本号
+version = "1.0.2" //发布版本号
 group = "com.zcbl.client" //最终引用形式，如compile 'com.zcbl.client:zcbl-video-survey-library:1.0.0'，其中lfilepicker在后面配置
 android {
     compileSdkVersion 26
@@ -54,6 +54,13 @@ android {
 
     }
 }
+//除去org.json 警告
+configurations { compile.exclude group: "org.json", module: "json" }
+//configurations.all{
+//    resolutionStrategy{
+//        force 'org.json:json:latest.release'
+//    }
+//}
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
@@ -61,13 +68,19 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support:appcompat-v7:26.+'
-    testCompile 'junit:junit:4.12'
+//    testCompile 'junit:junit:4.12'
 
     compile ('com.wilddog.client:wilddog-video-room-android:latest.release'){
         exclude group:"com.squareup.okhttp3",module:"okhttp"
     }
-    compile 'com.wilddog.client:wilddog-auth-android:latest.release'
-    compile 'com.wilddog.client:wilddog-sync-android:latest.release'
+    compile ('com.wilddog.client:wilddog-auth-android:latest.release'){
+//        exclude group: "com.fasterxml.jackson.core",module:"jackson-databind"
+    }
+    compile ('com.wilddog.client:wilddog-sync-android:latest.release'){
+//        exclude group: "com.fasterxml.jackson.core",module:"jackson-databind"
+
+    }
+
 }
 bintray {
     user = properties.getProperty("bintray.user")
@@ -139,7 +152,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 artifacts {
-    archives javadocJar
+//    archives javadocJar
     archives sourcesJar
 }
 

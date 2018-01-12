@@ -1,11 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/color_ffffff"
     android:orientation="vertical">
 
     <ImageView
         android:layout_width="match_parent"
-        android:src="@drawable/ic_icon96"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_icon96" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@color/title_bar_35A942"
+        android:paddingLeft="@dimen/padding_left_8"
+        android:paddingRight="@dimen/padding_right_8">
+
+        <ImageView
+            android:id="@+id/video_transition_goback"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_goback" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:text="@string/video_connection"
+            android:textColor="@color/title_bar_ffffff"
+            android:textSize="@dimen/title_size_18"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/video_transition_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:src="@drawable/ic_zuoxi_free" />
+    <TextView
+        android:id="@+id/video_transition_description"
+        android:text="@string/text_zuoxi_free"
+        android:textColor="@color/color_666666"
+        android:textSize="@dimen/title_size_16"
+        android:layout_marginRight="40dp"
+        android:layout_marginLeft="40dp"
+        android:gravity="center"
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/video_transition_image"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-</LinearLayout>
+
+
+        <Button
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="100dp"
+            android:id="@+id/video_transition_commit"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="40dp"
+            android:layout_marginTop="80dp"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:background="@drawable/ripple_selector_button"
+            android:text="建立视频查勘"
+            android:minHeight="0dp"
+            android:textColor="@color/title_bar_ffffff"
+            android:textSize="@dimen/title_size_16" />
+
+
+</RelativeLayout>

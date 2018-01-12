@@ -5,7 +5,7 @@ android {
     buildToolsVersion "26.0.2"
     defaultConfig {
         applicationId "com.zcbl.client.zcbl_video_survey_android"
-        minSdkVersion 23
+        minSdkVersion 16
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -17,7 +17,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 }
+configurations { compile.exclude group: "org.json", module: "json" }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
@@ -27,5 +36,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
+//    compile 'com.zcbl.client:zcbl-video-survey-library:1.0.1'
     compile project(':zcbl-video-survey-library')
 }
