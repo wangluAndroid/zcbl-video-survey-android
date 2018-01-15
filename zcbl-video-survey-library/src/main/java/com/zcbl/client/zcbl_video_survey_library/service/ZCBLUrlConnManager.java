@@ -12,7 +12,7 @@ import java.util.Map;
  * Created by serenitynanian on 2017/12/15.
  */
 
-public class UrlConnManager {
+public class ZCBLUrlConnManager {
     public static HttpURLConnection getHttpURLConnection(String url){
         HttpURLConnection mHttpURLConnection=null;
         try {

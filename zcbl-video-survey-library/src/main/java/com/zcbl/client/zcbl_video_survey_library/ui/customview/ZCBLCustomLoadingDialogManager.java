@@ -14,16 +14,16 @@ import com.zcbl.client.zcbl_video_survey_library.R;
  *created by WangLu on 2017年6月22日 下午1:59:31
  *function ：
 **/
-public class CustomLoadingDialogManager {
+public class ZCBLCustomLoadingDialogManager {
 	
 	private Context mContext;
 	private Dialog dialog;
 
-	public CustomLoadingDialogManager(Context context) {
+	public ZCBLCustomLoadingDialogManager(Context context) {
 		this.mContext = context;
 	}
 
-	public CustomLoadingDialogManager initDialog(){
+	public ZCBLCustomLoadingDialogManager initDialog(){
 		if(null == dialog){
 			dialog = new Dialog(mContext, R.style.loading_H5);
 			DisplayMetrics displayMetrics = mContext.getResources().getDisplayMetrics();
@@ -42,14 +42,14 @@ public class CustomLoadingDialogManager {
 		return this ;
 	}
 	
-	public CustomLoadingDialogManager showDialog(){
+	public ZCBLCustomLoadingDialogManager showDialog(){
 		if(null != dialog && !dialog.isShowing()){
 			dialog.show();
 		}
 		return this ;
 	}
 	
-	public CustomLoadingDialogManager dismissDialog(){
+	public ZCBLCustomLoadingDialogManager dismissDialog(){
 		
 		if(null != dialog){
 			if(dialog.isShowing()){

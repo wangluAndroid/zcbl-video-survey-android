@@ -3,10 +3,8 @@ package com.zcbl.client.zcbl_video_survey_library.service;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.zcbl.client.zcbl_video_survey_library.Constants;
-import com.zcbl.client.zcbl_video_survey_library.bean.WilddogVideoModel;
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -43,16 +41,16 @@ import okhttp3.Response;
  * Created by serenitynanian on 2017/12/15.
  */
 
-public class HttpUtils {
+public class ZCBLHttpUtils {
 
-    private static HttpUtils mInstance;
+    private static ZCBLHttpUtils mInstance;
     private OkHttpClient mOkHttpClient;
 
     public interface UpdateCallback{
         void onError(String error);
         void onSuccess(String response);
     }
-    private HttpUtils() {
+    private ZCBLHttpUtils() {
 
         SSLParams sslSocketFactory = getSslSocketFactory(null, null, null);
         mOkHttpClient=new OkHttpClient
@@ -71,11 +69,11 @@ public class HttpUtils {
     }
 
 
-    public static HttpUtils getInstance() {
+    public static ZCBLHttpUtils getInstance() {
         if (mInstance == null) {
-            synchronized (HttpUtils.class) {
+            synchronized (ZCBLHttpUtils.class) {
                 if (mInstance == null) {
-                    mInstance = new HttpUtils();
+                    mInstance = new ZCBLHttpUtils();
                 }
             }
         }
@@ -96,14 +94,14 @@ public class HttpUtils {
                         .enqueue(new Callback() {
                             @Override
                             public void onFailure(Call call, IOException e) {
-                                Log.i(Constants.TAG,"-----------HttpUtils请求---onFailure----->" + e.toString());
+                                Log.i(ZCBLConstants.TAG,"-----------HttpUtils请求---onFailure----->" + e.toString());
                                 updateCallback.onError(e.toString());
                             }
 
                             @Override
                             public void onResponse(Call call, final Response response) throws IOException {
                                 String result = response.body().string();
-                                Log.i(Constants.TAG,"------------HttpUtils请求---onResponse---->"+result);
+                                Log.i(ZCBLConstants.TAG,"------------HttpUtils请求---onResponse---->"+result);
                                 if(!TextUtils.isEmpty(result)){
                                     if(result.contains("\"rescode\":\"200\"")){
                                         updateCallback.onSuccess(result);

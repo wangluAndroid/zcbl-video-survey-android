@@ -28,12 +28,12 @@ import com.wilddog.wilddogauth.WilddogAuth;
 import com.wilddog.wilddogauth.core.Task;
 import com.wilddog.wilddogauth.core.listener.OnCompleteListener;
 import com.wilddog.wilddogauth.core.result.AuthResult;
-import com.zcbl.client.zcbl_video_survey_library.bean.WilddogVideoModel;
-import com.zcbl.client.zcbl_video_survey_library.service.HttpUtils;
-import com.zcbl.client.zcbl_video_survey_library.service.ToastUtils;
-import com.zcbl.client.zcbl_video_survey_library.ui.activity.WilddogVideoActivity;
-import com.zcbl.client.zcbl_video_survey_library.ui.customview.CustomLoadingDialogManager;
-import com.zcbl.client.zcbl_video_survey_library.utils.PermissionHelper;
+import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
+import com.zcbl.client.zcbl_video_survey_library.service.ZCBLToastUtils;
+import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyActivity;
+import com.zcbl.client.zcbl_video_survey_library.ui.customview.ZCBLCustomLoadingDialogManager;
+import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLPermissionHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,7 +47,7 @@ import java.io.Serializable;
  * 视频查勘过渡页面
  * 初始化查勘所需资源
  */
-public class VideoSurveyConnectTransionActivity extends AppCompatActivity implements View.OnClickListener {
+public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity implements View.OnClickListener {
 
     private ImageView iv_goback;
     private TextView tv_descption;
@@ -55,12 +55,12 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
     private Button but_start_video ;
     private static final String PACKAGE_URL_SCHEME = "package:"; // 方案
     private static final String TAG = "ZCBL_WilddogVideoModule";
-    private PermissionHelper mHelper; // 权限检测器
+    private ZCBLPermissionHelper mHelper; // 权限检测器
     private boolean isRequireCheck = true; // 是否需要系统权限检测
 
     private SyncReference ref;
 
-    private WilddogVideoModel wilddogVideoModel ;
+    private ZCBLVideoSurveyModel ZCBLVideoSurveyModel;
     private String siSurveyNo ;
     private String phoneNum ;
     private String carNum ;
@@ -73,7 +73,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
 
     private ChildEventListener childEventListener;
 
-    private CustomLoadingDialogManager loading_dialog;
+    private ZCBLCustomLoadingDialogManager loading_dialog;
     private Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -83,7 +83,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
             if (1 == what) {
                 removeSync();
                 dismissLoading();
-                ToastUtils.showToast(VideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
+                ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
             }
         }
     };
@@ -118,13 +118,13 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
             public void onComplete(Task<AuthResult> var1) {
                 if (var1.isSuccessful()) {
                     dismissLoading();
-                    Intent intent = new Intent(VideoSurveyConnectTransionActivity.this, WilddogVideoActivity.class);
-                    intent.putExtra("wilddogVideoModel", (Serializable) wilddogVideoModel);
+                    Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
+                    intent.putExtra("ZCBLVideoSurveyModel", (Serializable) ZCBLVideoSurveyModel);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    VideoSurveyConnectTransionActivity.this.startActivityForResult(intent,Constants.GO_TO_VIDEO_ROOM);
+                    ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
                 } else {
                     dismissLoading();
-                    ToastUtils.showToast(VideoSurveyConnectTransionActivity.this, "登录失败,请查看日志寻找失败原因");
+                    ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this, "登录失败,请查看日志寻找失败原因");
                     Log.e("error", var1.getException().getMessage());
                 }
             }
@@ -139,10 +139,10 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
         if (null != mHelper) {
             mHelper = null ;
         }
-        mHelper = new PermissionHelper(this);
+        mHelper = new ZCBLPermissionHelper(this);
         if (sdk>=23){
             if (isRequireCheck) {
-                String[] permissions = Constants.PERMISSIONS;
+                String[] permissions = ZCBLConstants.PERMISSIONS;
                 if (mHelper.lacksPermissions(permissions)) {
                     mHelper.requestPermissions(permissions); // 请求权限
                 } else {
@@ -162,7 +162,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PermissionHelper.PERMISSION_REQUEST_CODE && hasAllPermissionsGranted(grantResults)) {
+        if (requestCode == ZCBLPermissionHelper.PERMISSION_REQUEST_CODE && hasAllPermissionsGranted(grantResults)) {
             isRequireCheck = true;
             // TODO: 2018/1/12 进行视频token请求 然后请求连接视频
             requestConnect();
@@ -191,7 +191,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
             e.printStackTrace();
         }
 
-        HttpUtils.getInstance().post(Constants.VIDEO_CONNECTION_URL,jsonObject, new HttpUtils.UpdateCallback() {
+        ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new ZCBLHttpUtils.UpdateCallback() {
             @Override
             public void onError(String error) {
                 runOnUiThread(new Runnable() {
@@ -204,7 +204,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
 
             @Override
             public void onSuccess(final String response) {
-                VideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
+                ZCBLVideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         Log.i(TAG,"--------视频请求连接---response---------->" + response);
@@ -216,12 +216,12 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
                                 syncCommandNodePath = data.optString("syncCommandNodePath");
                                 syncVideoConnectCommandNodePath = data.optString("syncVideoConnectCommandNodePath");
                                 videoRoomId = data.optString("videoRoomId");
-                                wilddogVideoModel = new WilddogVideoModel(siSurveyNo,phoneNum,carNum,longitude+"100",latitude+"90",caseAddress,
+                                ZCBLVideoSurveyModel = new ZCBLVideoSurveyModel(siSurveyNo,phoneNum,carNum,longitude+"100",latitude+"90",caseAddress,
                                         videoRoomId,syncCommandNodePath,syncVideoConnectCommandNodePath);
                                 addWilddogListener();
                             }else{
                                 dismissLoading();
-                                ToastUtils.showToast(VideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
+                                ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
                             }
                         } catch (JSONException e) {
                             dismissLoading();
@@ -263,15 +263,15 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
                         }
                         removeSync();
                         goToVideoroom();
-                        System.out.println("----------goToConnection----1------->");
+                        Log.i(ZCBLConstants.TAG,"----------goToConnection----1------->");
                     } else if ("WEB$$refuseConnection".equals(type)) {
                         if (null != handler) {
                             handler.removeMessages(1);
                         }
                         dismissLoading();
                         removeSync();
-                        ToastUtils.showToast(VideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
-                        System.out.println("-----------refuseConnection---------------");
+                        ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
+                        Log.i(ZCBLConstants.TAG,"-----------refuseConnection---------------");
                     }
                 }
             }
@@ -332,8 +332,8 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
             public void onClick(DialogInterface dialog, int which) {
                 isRequireCheck = true ;
                 Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse(PACKAGE_URL_SCHEME + VideoSurveyConnectTransionActivity.this.getPackageName()));
-                VideoSurveyConnectTransionActivity.this.startActivity(intent);
+                intent.setData(Uri.parse(PACKAGE_URL_SCHEME + ZCBLVideoSurveyConnectTransionActivity.this.getPackageName()));
+                ZCBLVideoSurveyConnectTransionActivity.this.startActivity(intent);
             }
         });
 
@@ -376,7 +376,7 @@ public class VideoSurveyConnectTransionActivity extends AppCompatActivity implem
         but_start_video.setBackgroundResource(R.drawable.button_disable);
         but_start_video.setTextColor(getResources().getColor(R.color.color_ffffff));
         if(null == loading_dialog){
-            loading_dialog = new CustomLoadingDialogManager(this).initDialog().showDialog();
+            loading_dialog = new ZCBLCustomLoadingDialogManager(this).initDialog().showDialog();
         }
         if(null!= loading_dialog && !loading_dialog.isShowing()){
             loading_dialog.showDialog();

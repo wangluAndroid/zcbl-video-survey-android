@@ -1,7 +1,6 @@
 package com.zcbl.client.zcbl_video_survey_library.utils;
 
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -12,7 +11,7 @@ import android.support.v4.content.ContextCompat;
  * Created by serenity on 16-12-20.
  */
 
-public class PermissionHelper {
+public class ZCBLPermissionHelper {
 
 
 
@@ -27,7 +26,7 @@ public class PermissionHelper {
     private final static int START_VIDEO = 0 ;
 
 
-    public PermissionHelper(Activity activity) {
+    public ZCBLPermissionHelper(Activity activity) {
         mActivity=activity;
         mContext = activity.getApplicationContext();
     }

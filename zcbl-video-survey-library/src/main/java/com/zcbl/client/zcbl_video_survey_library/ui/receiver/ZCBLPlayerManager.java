@@ -3,21 +3,24 @@ package com.zcbl.client.zcbl_video_survey_library.ui.receiver;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.Build;
+import android.util.Log;
+
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 
 /**
  * Created by serenitynanian on 2018/1/3.
  */
 
-public class PlayerManager {
+public class ZCBLPlayerManager {
 
     private final AudioManager audioManager;
 
-    private PlayerManager(Context context){
+    private ZCBLPlayerManager(Context context){
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     }
 
-    public static PlayerManager getInstants(Context context){
-        return new PlayerManager(context);
+    public static ZCBLPlayerManager getInstants(Context context){
+        return new ZCBLPlayerManager(context);
     }
 
     /**
@@ -25,7 +28,7 @@ public class PlayerManager {
      */
     public void changeToSpeaker(){
         //切换到外放时  先检测下 是否已经连接到蓝牙 ，如果连接到蓝牙 使用蓝牙播放
-        System.out.println("---------changeToSpeaker-------->"+audioManager.isBluetoothA2dpOn());
+        Log.i(ZCBLConstants.TAG,"---------changeToSpeaker-------->"+audioManager.isBluetoothA2dpOn());
         if (audioManager.isBluetoothA2dpOn()) {
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             audioManager.startBluetoothSco();
@@ -43,8 +46,8 @@ public class PlayerManager {
      * 切换到蓝牙
      */
     public void changeToBluetooth(){
-        System.out.println("-------------》"+audioManager.isWiredHeadsetOn());
-        System.out.println("-------------》"+audioManager.isBluetoothA2dpOn());
+        Log.i(ZCBLConstants.TAG,"-------------》"+audioManager.isWiredHeadsetOn());
+        Log.i(ZCBLConstants.TAG,"-------------》"+audioManager.isBluetoothA2dpOn());
         if (!audioManager.isWiredHeadsetOn()) {
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             audioManager.startBluetoothSco();

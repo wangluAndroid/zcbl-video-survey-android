@@ -1,12 +1,12 @@
 package com.zcbl.client.zcbl_video_survey_android;
 
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import com.zcbl.client.zcbl_video_survey_library.VideoSurveyConnectTransionActivity;
+import com.zcbl.client.zcbl_video_survey_library.ZCBLSDK;
+import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -21,8 +21,10 @@ public class MainActivity extends AppCompatActivity {
         text.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, VideoSurveyConnectTransionActivity.class);
-                startActivity(intent);
+//                Intent intent = new Intent(MainActivity.this, ZCBLVideoSurveyConnectTransionActivity.class);
+//                startActivity(intent);
+                ZCBLVideoSurveyModel surveyModel = new ZCBLVideoSurveyModel();
+                ZCBLSDK.goToVideoSurvey(MainActivity.this,surveyModel);
             }
         });
     }

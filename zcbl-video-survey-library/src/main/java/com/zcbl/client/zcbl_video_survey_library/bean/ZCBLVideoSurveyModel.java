@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Created by serenitynanian on 2017/12/22.
  */
 
-public class WilddogVideoModel implements Serializable {
+public class ZCBLVideoSurveyModel implements Serializable {
     private String siSurveyNo;
     private String phoneNum;
     private String carNum;
@@ -18,18 +18,18 @@ public class WilddogVideoModel implements Serializable {
     private String syncVideoConnectCommandNodePath;
 
 
-    public WilddogVideoModel() {
+    public ZCBLVideoSurveyModel() {
     }
 
-    public WilddogVideoModel(String siSurveyNo,
-                             String phoneNum,
-                             String carNum,
-                             String longitude,
-                             String latitude,
-                             String caseAddress,
-                             String videoRoomId,
-                             String syncCommandNodePath,
-                             String syncVideoConnectCommandNodePath
+    public ZCBLVideoSurveyModel(String siSurveyNo,
+                                String phoneNum,
+                                String carNum,
+                                String longitude,
+                                String latitude,
+                                String caseAddress,
+                                String videoRoomId,
+                                String syncCommandNodePath,
+                                String syncVideoConnectCommandNodePath
                              ) {
 
         this.siSurveyNo = siSurveyNo; //查勘号
@@ -117,7 +117,7 @@ public class WilddogVideoModel implements Serializable {
 
     @Override
     public String toString() {
-        return "WilddogVideoModel{" +
+        return "ZCBLVideoSurveyModel{" +
                 "siSurveyNo='" + siSurveyNo + '\'' +
                 ", phoneNum='" + phoneNum + '\'' +
                 ", carNum='" + carNum + '\'' +

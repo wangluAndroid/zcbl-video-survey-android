@@ -6,7 +6,7 @@ import android.Manifest;
  * Created by serenitynanian on 2017/12/15.
  */
 
-public class Constants {
+public class ZCBLConstants {
 
     public static final String TAG = "ZCBL";
 
@@ -16,7 +16,7 @@ public class Constants {
     public static final int SURVEY_IS_OVER = 3;
     public static final int DISSMISS_DIALOG = 4;
     public static final int PERMISSIONS_REFUSE = 5;
-    public static final int REFRESH_IMAGE_LIST = 6;
+    public static final int VIDEO_SURVEY_IS_OVER = 6;
 
     // 所需的全部权限
     public static final String[] PERMISSIONS = new String[]{

@@ -34,13 +34,13 @@ import com.wilddog.video.room.CompleteListener;
 import com.wilddog.video.room.RoomStream;
 import com.wilddog.video.room.WilddogRoom;
 import com.wilddog.wilddogauth.WilddogAuth;
-import com.zcbl.client.zcbl_video_survey_library.Constants;
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.R;
-import com.zcbl.client.zcbl_video_survey_library.bean.WilddogVideoModel;
-import com.zcbl.client.zcbl_video_survey_library.service.HttpUtils;
-import com.zcbl.client.zcbl_video_survey_library.ui.receiver.BluetoothConnectionReceiver;
-import com.zcbl.client.zcbl_video_survey_library.ui.receiver.HeadsetReceiver;
-import com.zcbl.client.zcbl_video_survey_library.utils.Base64Utils;
+import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
+import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLBluetoothConnectionReceiver;
+import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLHeadsetReceiver;
+import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLBase64Utils;
 
 
 import org.json.JSONException;
@@ -49,8 +49,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static com.zcbl.client.zcbl_video_survey_library.Constants.GO_TO_VIDEO_ROOM;
-import static com.zcbl.client.zcbl_video_survey_library.Constants.REFRESH_IMAGE_LIST;
+import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.GO_TO_VIDEO_ROOM;
+import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURVEY_IS_OVER;
 
 
 /**
@@ -59,7 +59,7 @@ import static com.zcbl.client.zcbl_video_survey_library.Constants.REFRESH_IMAGE_
  * 2.所有的断开只返回到进入界面
  */
 
-public class WilddogVideoActivity extends AppCompatActivity implements View.OnClickListener {
+public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener {
 
     private WilddogVideoView wilddog_video_view;
 
@@ -76,19 +76,19 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     private boolean canTakePic = true ;
     private SyncReference syncReference;
     private ChildEventListener childEventListener;
-    private WilddogVideoModel wilddogVideoModel ;
+    private ZCBLVideoSurveyModel ZCBLVideoSurveyModel;
 
     private boolean isLightOn = false ;
     private ImageView iv_switch_audio;
-    private HeadsetReceiver headsetReceiver;
-    private BluetoothConnectionReceiver blueAudioNoisyReceiver;
+    private ZCBLHeadsetReceiver ZCBLHeadsetReceiver;
+    private ZCBLBluetoothConnectionReceiver blueAudioNoisyReceiver;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_wilddog_video);
-        wilddogVideoModel = (WilddogVideoModel) getIntent().getSerializableExtra("wilddogVideoModel");
+        ZCBLVideoSurveyModel = (ZCBLVideoSurveyModel) getIntent().getSerializableExtra("ZCBLVideoSurveyModel");
         registerBroadcast();
         initView();
         initRoomSDK();
@@ -100,13 +100,13 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     private void registerBroadcast() {
 
         //动态注册耳机插入广播
-        headsetReceiver = new HeadsetReceiver();
+        ZCBLHeadsetReceiver = new ZCBLHeadsetReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("android.intent.action.HEADSET_PLUG");
-        this.registerReceiver(headsetReceiver, intentFilter);
+        this.registerReceiver(ZCBLHeadsetReceiver, intentFilter);
 
         //动态注册蓝牙广播
-        blueAudioNoisyReceiver = new BluetoothConnectionReceiver();
+        blueAudioNoisyReceiver = new ZCBLBluetoothConnectionReceiver();
         //蓝牙状态广播监听
         IntentFilter audioFilter = new IntentFilter();
         audioFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);//蓝牙设备连接或断开
@@ -128,24 +128,24 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                 baos.close();
 
                 byte[] bitmapBytes = baos.toByteArray();
-                String result = Base64Utils.encodeToString(bitmapBytes, true);
+                String result = ZCBLBase64Utils.encodeToString(bitmapBytes, true);
                 if (TextUtils.isEmpty(result)) {
-                    Toast.makeText(WilddogVideoActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
                     return ;
                 }
                 JSONObject json = new JSONObject();
                 try {
                     json.put("photoContent", result);
-                    json.put("longitude", wilddogVideoModel.getLongitude());
-                    json.put("latitude", wilddogVideoModel.getLatitude());
-                    json.put("shotLocation", wilddogVideoModel.getCaseAddress());
+                    json.put("longitude", ZCBLVideoSurveyModel.getLongitude());
+                    json.put("latitude", ZCBLVideoSurveyModel.getLatitude());
+                    json.put("shotLocation", ZCBLVideoSurveyModel.getCaseAddress());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                HttpUtils.getInstance().post(Constants.UPLOAD_IMAGE_URL,json,new HttpUtils.UpdateCallback() {
+                ZCBLHttpUtils.getInstance().post(ZCBLConstants.UPLOAD_IMAGE_URL,json,new ZCBLHttpUtils.UpdateCallback() {
                     @Override
                     public void onError(String error) {
-                        WilddogVideoActivity.this.runOnUiThread(new Runnable() {
+                        ZCBLVideoSurveyActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 progressbar.setVisibility(View.GONE);
@@ -154,14 +154,14 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                                 if (null != syncReference) {
                                     syncReference.push().setValue(tempStr);
                                 }
-                                Toast.makeText(WilddogVideoActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
 
                     @Override
                     public void onSuccess(final String response) {
-                        WilddogVideoActivity.this.runOnUiThread(new Runnable() {
+                        ZCBLVideoSurveyActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 progressbar.setVisibility(View.GONE);
@@ -172,8 +172,8 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
                                     String originalPhotoUrl = obj.optString("originalPhotoUrl");
                                     String watermarkPhotoUrl = obj.optString("watermarkPhotoUrl");
-                                    String lon = wilddogVideoModel.getLongitude();
-                                    String lat = wilddogVideoModel.getLatitude();
+                                    String lon = ZCBLVideoSurveyModel.getLongitude();
+                                    String lat = ZCBLVideoSurveyModel.getLatitude();
 
                                     String tempStr = "APP$$PHOTO$$";
                                     StringBuilder sb = new StringBuilder(tempStr);
@@ -184,11 +184,11 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                                             .append(lon)
                                             .append("&")
                                             .append(lat);
-                                    System.out.println("-------------upload--string---->"+sb.toString());
+                                    Log.i(ZCBLConstants.TAG,"-------------upload--string---->"+sb.toString());
                                     if (null != syncReference) {
                                         syncReference.push().setValue(sb.toString());
                                     }
-                                    Toast.makeText(WilddogVideoActivity.this,"上传图片成功",Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片成功",Toast.LENGTH_SHORT).show();
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
@@ -215,7 +215,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void initSync() {
-        syncReference = WilddogSync.getInstance().getReference(wilddogVideoModel.getSyncCommandNodePath());
+        syncReference = WilddogSync.getInstance().getReference(ZCBLVideoSurveyModel.getSyncCommandNodePath());
         childEventListener = syncReference.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -235,18 +235,18 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
                             @Override
                             public void onError(WilddogVideoError wilddogVideoError) {
-                                Log.e(Constants.TAG, "onError: 拍照---->"+wilddogVideoError.getMessage() );
+                                Log.e(ZCBLConstants.TAG, "onError: 拍照---->"+wilddogVideoError.getMessage() );
                             }
                         },false);
                     } else if ("WEB$$openLight".equals(type)) {
                         controlCameraLight();
-//                        Toast.makeText(WilddogVideoActivity.this, "开启闪光灯", Toast.LENGTH_LONG).show();
+//                        Toast.makeText(ZCBLVideoSurveyActivity.this, "开启闪光灯", Toast.LENGTH_LONG).show();
                     } else if ("WEB$$closeLight".equals(type)) {
                         controlCameraLight();
-//                        Toast.makeText(WilddogVideoActivity.this, "关闭闪光灯", Toast.LENGTH_LONG).show();
+//                        Toast.makeText(ZCBLVideoSurveyActivity.this, "关闭闪光灯", Toast.LENGTH_LONG).show();
                     } else if ("WEB$$surveyIsOver".equals(type)) {
-                        WilddogVideoActivity.this.setResult(GO_TO_VIDEO_ROOM);
-                        WilddogVideoActivity.this.finish();
+                        ZCBLVideoSurveyActivity.this.setResult(GO_TO_VIDEO_ROOM);
+                        ZCBLVideoSurveyActivity.this.finish();
                     }
 
                 }
@@ -275,7 +275,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void joinRoom() {
-        room = new WilddogRoom(wilddogVideoModel.getVideoRoomId(), new WilddogRoom.Listener() {
+        room = new WilddogRoom(ZCBLVideoSurveyModel.getVideoRoomId(), new WilddogRoom.Listener() {
             @Override
             public void onConnected(WilddogRoom wilddogRoom) {
                 room.publish(localStream, new CompleteListener() {
@@ -285,9 +285,9 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                         if (wilddogVideoError != null) {
                             //失败
                             Log.e("error", "error:" + wilddogVideoError.getMessage());
-                            Toast.makeText(WilddogVideoActivity.this, "推送流失败", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ZCBLVideoSurveyActivity.this, "推送流失败", Toast.LENGTH_SHORT).show();
                         } else {
-//                            Toast.makeText(WilddogVideoActivity.this, "推送流成功", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(ZCBLVideoSurveyActivity.this, "推送流成功", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -295,8 +295,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
             @Override
             public void onDisconnected(WilddogRoom wilddogRoom) {
-//                Toast.makeText(WilddogVideoActivity.this, "服务器连接断开", Toast.LENGTH_SHORT).show();
-                setResult(REFRESH_IMAGE_LIST);
+//                Toast.makeText(ZCBLVideoSurveyActivity.this, "服务器连接断开", Toast.LENGTH_SHORT).show();
                 finish();
             }
 
@@ -323,7 +322,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                 room.unsubscribe(roomStream, new CompleteListener() {
                     @Override
                     public void onComplete(WilddogVideoError wilddogVideoError) {
-                        setResult(REFRESH_IMAGE_LIST);
+                        setResult(VIDEO_SURVEY_IS_OVER);
                         finish();
                     }
                 });
@@ -353,9 +352,9 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
             @Override
             public void onError(WilddogRoom wilddogRoom, final WilddogVideoError wilddogVideoError) {
-                Toast.makeText(WilddogVideoActivity.this, "发生错误,请产看日志", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ZCBLVideoSurveyActivity.this, "发生错误,请产看日志", Toast.LENGTH_SHORT).show();
                 Log.e("error", "错误码:" + wilddogVideoError.getErrCode() + ",错误信息:" + wilddogVideoError.getMessage());
-                setResult(REFRESH_IMAGE_LIST);
+                setResult(VIDEO_SURVEY_IS_OVER);
                 finish();
             }
         });
@@ -365,7 +364,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
     private void initRoomSDK() {
         LogUtil.setLogLevel(Logger.Level.DEBUG);
-        WilddogVideoInitializer.initialize(WilddogVideoActivity.this, Constants.WILDDOG_VIDEO_ID, WilddogAuth.getInstance().getCurrentUser().getToken(false).getResult().getToken());
+        WilddogVideoInitializer.initialize(ZCBLVideoSurveyActivity.this, ZCBLConstants.WILDDOG_VIDEO_ID, WilddogAuth.getInstance().getCurrentUser().getToken(false).getResult().getToken());
         initializer = WilddogVideoInitializer.getInstance();
     }
 
@@ -399,7 +398,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.w(Constants.TAG,"-------------WilddogVideoActivity----onDestory--------");
+        Log.w(ZCBLConstants.TAG,"-------------ZCBLVideoSurveyActivity----onDestory--------");
         leaveRoom();
         if (null != syncReference) {
             if (null != childEventListener) {
@@ -418,8 +417,8 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
             wilddog_video_view.release();
         }
 
-        if (null != headsetReceiver) {
-            unregisterReceiver(headsetReceiver);
+        if (null != ZCBLHeadsetReceiver) {
+            unregisterReceiver(ZCBLHeadsetReceiver);
         }
 
         if (null != blueAudioNoisyReceiver) {
@@ -474,7 +473,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 
                     @Override
                     public void onError(WilddogVideoError wilddogVideoError) {
-                        Log.e(Constants.TAG, "WilddogVideoActivity---onError: 拍照---->"+wilddogVideoError.getMessage() );
+                        Log.e(ZCBLConstants.TAG, "ZCBLVideoSurveyActivity---onError: 拍照---->"+wilddogVideoError.getMessage() );
                     }
                 },false);
             }
@@ -486,10 +485,10 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
 //                audioManager.setBluetoothScoOn(false);
 //                audioManager.setSpeakerphoneOn(false);
 //
-//                System.out.println("--------是否耳机线连接-------->"+audioManager.isWiredHeadsetOn());
-//                System.out.println("--------扬声器是否打开-------->"+audioManager.isSpeakerphoneOn());
-//                System.out.println("--------蓝牙耳机是否打开A2DP-------->"+audioManager.isBluetoothA2dpOn());
-//                System.out.println("--------蓝牙耳机是否打开SCO-------->"+audioManager.isBluetoothScoOn());
+//                Log.i(ZCBLConstants.TAG,"--------是否耳机线连接-------->"+audioManager.isWiredHeadsetOn());
+//                Log.i(ZCBLConstants.TAG,"--------扬声器是否打开-------->"+audioManager.isSpeakerphoneOn());
+//                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开A2DP-------->"+audioManager.isBluetoothA2dpOn());
+//                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开SCO-------->"+audioManager.isBluetoothScoOn());
 //                break ;
         }
     }
@@ -538,7 +537,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 //                        leaveRoom();
-                        setResult(REFRESH_IMAGE_LIST);
+                        setResult(GO_TO_VIDEO_ROOM);
                         finish();
                     }
                 });
@@ -572,7 +571,7 @@ public class WilddogVideoActivity extends AppCompatActivity implements View.OnCl
     protected void onStop() {
         super.onStop();
         leaveRoom();
-        setResult(REFRESH_IMAGE_LIST);
+        setResult(GO_TO_VIDEO_ROOM);
         finish();
     }
 }

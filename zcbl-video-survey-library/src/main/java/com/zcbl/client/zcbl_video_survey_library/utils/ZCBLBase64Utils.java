@@ -85,7 +85,7 @@ import java.util.Arrays;
  * @author Mikael Grev Date: 2004-aug-02 Time: 11:31:11
  */
 
-public class Base64Utils {
+public class ZCBLBase64Utils {
 	private static final char[] CA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 			.toCharArray();
 	private static final int[] IA = new int[256];
