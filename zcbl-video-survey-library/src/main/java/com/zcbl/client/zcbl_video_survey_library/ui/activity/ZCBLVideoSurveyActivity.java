@@ -76,11 +76,11 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private boolean canTakePic = true ;
     private SyncReference syncReference;
     private ChildEventListener childEventListener;
-    private ZCBLVideoSurveyModel ZCBLVideoSurveyModel;
+    private ZCBLVideoSurveyModel zcblVideoSurveyModel;
 
     private boolean isLightOn = false ;
     private ImageView iv_switch_audio;
-    private ZCBLHeadsetReceiver ZCBLHeadsetReceiver;
+    private ZCBLHeadsetReceiver zcblHeadsetReceiver;
     private ZCBLBluetoothConnectionReceiver blueAudioNoisyReceiver;
 
     @Override
@@ -88,7 +88,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_wilddog_video);
-        ZCBLVideoSurveyModel = (ZCBLVideoSurveyModel) getIntent().getSerializableExtra("ZCBLVideoSurveyModel");
+        zcblVideoSurveyModel = (ZCBLVideoSurveyModel) getIntent().getSerializableExtra("ZCBLVideoSurveyModel");
         registerBroadcast();
         initView();
         initRoomSDK();
@@ -100,10 +100,10 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private void registerBroadcast() {
 
         //动态注册耳机插入广播
-        ZCBLHeadsetReceiver = new ZCBLHeadsetReceiver();
+        zcblHeadsetReceiver = new ZCBLHeadsetReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("android.intent.action.HEADSET_PLUG");
-        this.registerReceiver(ZCBLHeadsetReceiver, intentFilter);
+        this.registerReceiver(zcblHeadsetReceiver, intentFilter);
 
         //动态注册蓝牙广播
         blueAudioNoisyReceiver = new ZCBLBluetoothConnectionReceiver();
@@ -136,9 +136,9 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 JSONObject json = new JSONObject();
                 try {
                     json.put("photoContent", result);
-                    json.put("longitude", ZCBLVideoSurveyModel.getLongitude());
-                    json.put("latitude", ZCBLVideoSurveyModel.getLatitude());
-                    json.put("shotLocation", ZCBLVideoSurveyModel.getCaseAddress());
+                    json.put("longitude", zcblVideoSurveyModel.getLongitude());
+                    json.put("latitude", zcblVideoSurveyModel.getLatitude());
+                    json.put("shotLocation", zcblVideoSurveyModel.getCaseAddress());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -172,8 +172,8 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 
                                     String originalPhotoUrl = obj.optString("originalPhotoUrl");
                                     String watermarkPhotoUrl = obj.optString("watermarkPhotoUrl");
-                                    String lon = ZCBLVideoSurveyModel.getLongitude();
-                                    String lat = ZCBLVideoSurveyModel.getLatitude();
+                                    String lon = zcblVideoSurveyModel.getLongitude();
+                                    String lat = zcblVideoSurveyModel.getLatitude();
 
                                     String tempStr = "APP$$PHOTO$$";
                                     StringBuilder sb = new StringBuilder(tempStr);
@@ -215,7 +215,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     }
 
     private void initSync() {
-        syncReference = WilddogSync.getInstance().getReference(ZCBLVideoSurveyModel.getSyncCommandNodePath());
+        syncReference = WilddogSync.getInstance().getReference(zcblVideoSurveyModel.getSyncCommandNodePath());
         childEventListener = syncReference.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -275,7 +275,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     }
 
     private void joinRoom() {
-        room = new WilddogRoom(ZCBLVideoSurveyModel.getVideoRoomId(), new WilddogRoom.Listener() {
+        room = new WilddogRoom(zcblVideoSurveyModel.getVideoRoomId(), new WilddogRoom.Listener() {
             @Override
             public void onConnected(WilddogRoom wilddogRoom) {
                 room.publish(localStream, new CompleteListener() {
@@ -417,8 +417,8 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
             wilddog_video_view.release();
         }
 
-        if (null != ZCBLHeadsetReceiver) {
-            unregisterReceiver(ZCBLHeadsetReceiver);
+        if (null != zcblHeadsetReceiver) {
+            unregisterReceiver(zcblHeadsetReceiver);
         }
 
         if (null != blueAudioNoisyReceiver) {

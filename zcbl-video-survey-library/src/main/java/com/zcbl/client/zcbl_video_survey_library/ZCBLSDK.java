@@ -1,12 +1,12 @@
 package com.zcbl.client.zcbl_video_survey_library;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-
 import com.wilddog.wilddogcore.WilddogApp;
 import com.wilddog.wilddogcore.WilddogOptions;
+import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLCheckUtils;
 
 /**
  * Created by serenitynanian on 2018/1/12.
@@ -20,9 +20,23 @@ public class ZCBLSDK {
         WilddogApp.initializeApp(context, syncOptions);
     }
 
-    public static void goToVideoSurvey(Context context,ZCBLVideoSurveyModel zcblVideoSurveyModel){
-        Intent intent = new Intent(context, ZCBLVideoSurveyConnectTransionActivity.class);
-        intent.putExtra("zcbl_model", zcblVideoSurveyModel);
-        context.startActivity(intent);
+    public static void goToVideoSurvey(Context context,ZCBLRequireParamsModel params){
+        ZCBLVideoSurveyModel model = ZCBLCheckUtils.checkParams(context,params);
+        if(null != model ){
+            Intent intent = new Intent(context, ZCBLVideoSurveyConnectTransionActivity.class);
+            intent.putExtra("zcbl_model", model);
+            context.startActivity(intent);
+        }
+    }
+
+    /**
+     * 开启debug 切换请求环境
+     * @param isOpenDebug
+     */
+    public static void setDedug(boolean isOpenDebug){
+        if(isOpenDebug){
+            ZCBLConstants.IS_DEBUG = true;
+            ZCBLConstants.BASE_URL = "https://survey.zhongchebaolian.com/";
+        }
     }
 }

@@ -9,7 +9,6 @@ import java.io.Serializable;
 public class ZCBLVideoSurveyModel implements Serializable {
     private String siSurveyNo;
     private String phoneNum;
-    private String carNum;
     private String longitude;
     private String latitude;
     private String caseAddress;
@@ -17,13 +16,11 @@ public class ZCBLVideoSurveyModel implements Serializable {
     private String syncCommandNodePath;
     private String syncVideoConnectCommandNodePath;
 
-
     public ZCBLVideoSurveyModel() {
     }
 
     public ZCBLVideoSurveyModel(String siSurveyNo,
                                 String phoneNum,
-                                String carNum,
                                 String longitude,
                                 String latitude,
                                 String caseAddress,
@@ -34,7 +31,6 @@ public class ZCBLVideoSurveyModel implements Serializable {
 
         this.siSurveyNo = siSurveyNo; //查勘号
         this.phoneNum = phoneNum;//报案人手机号
-        this.carNum = carNum;//报案人车牌号
         this.longitude = longitude;//经度------浮点型
         this.latitude = latitude;//纬度-----浮点型
         this.caseAddress = caseAddress;//事故地点
@@ -57,14 +53,6 @@ public class ZCBLVideoSurveyModel implements Serializable {
 
     public void setPhoneNum(String phoneNum) {
         this.phoneNum = phoneNum;
-    }
-
-    public String getCarNum() {
-        return carNum;
-    }
-
-    public void setCarNum(String carNum) {
-        this.carNum = carNum;
     }
 
     public String getLongitude() {
@@ -120,7 +108,6 @@ public class ZCBLVideoSurveyModel implements Serializable {
         return "ZCBLVideoSurveyModel{" +
                 "siSurveyNo='" + siSurveyNo + '\'' +
                 ", phoneNum='" + phoneNum + '\'' +
-                ", carNum='" + carNum + '\'' +
                 ", longitude='" + longitude + '\'' +
                 ", latitude='" + latitude + '\'' +
                 ", caseAddress='" + caseAddress + '\'' +

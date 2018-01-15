@@ -9,6 +9,7 @@ import android.Manifest;
 public class ZCBLConstants {
 
     public static final String TAG = "ZCBL";
+    public static boolean IS_DEBUG = false;
 
     public static final int GO_TO_CONNECTION = 0;
     public static final int REFUSE_CONNECTION = 1;
@@ -24,11 +25,11 @@ public class ZCBLConstants {
             Manifest.permission.CAMERA,
     };
 
-//    public static final String BASE_URL ="https://chakan.zhongchebaolian.com/";//生产环境
-    public static final String BASE_URL ="https://survey.zhongchebaolian.com/";//测试环境
+    public static String BASE_URL ="https://chakan.zhongchebaolian.com/";//生产环境
+//    public static String BASE_URL ="https://survey.zhongchebaolian.com/";//测试环境
 
-    public static final String UPLOAD_IMAGE_URL = BASE_URL+"boot-zcbl-survey-api/v1/upload/photo";
-    public static final String VIDEO_CONNECTION_URL = BASE_URL+"boot-zcbl-survey-api/survey/v1/video/connect";
+    public static final String UPLOAD_IMAGE_URL = "boot-zcbl-survey-api/v1/upload/photo";
+    public static final String VIDEO_CONNECTION_URL = "boot-zcbl-survey-api/survey/v1/video/connect";
     public static final String WILDDOG_VIDEO_ID = "wd6476157034byycgg";
     public static final String WILDDOG_APP_ID = "wd7055430119ruyynm";
 }

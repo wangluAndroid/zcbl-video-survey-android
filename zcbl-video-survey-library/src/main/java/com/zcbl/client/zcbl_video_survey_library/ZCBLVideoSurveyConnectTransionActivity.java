@@ -60,15 +60,9 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
     private SyncReference ref;
 
-    private ZCBLVideoSurveyModel ZCBLVideoSurveyModel;
+    private ZCBLVideoSurveyModel zcblVideoSurveyModel;
     private String siSurveyNo ;
     private String phoneNum ;
-    private String carNum ;
-    private double longitude ;
-    private double latitude ;
-    private String caseAddress ;
-    private String videoRoomId ;
-    private String syncCommandNodePath ;
     private String syncVideoConnectCommandNodePath ;
 
     private ChildEventListener childEventListener;
@@ -97,7 +91,15 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_survey_connect_transition);
         initView();
-        requestPermissions();
+        initData();
+        requestPermissions(false);
+    }
+
+    private void initData() {
+        Intent intent = getIntent();
+        zcblVideoSurveyModel = (ZCBLVideoSurveyModel) intent.getSerializableExtra("zcbl_model");
+        siSurveyNo = zcblVideoSurveyModel.getSiSurveyNo();
+        phoneNum = zcblVideoSurveyModel.getPhoneNum();
     }
 
     private void initView() {
@@ -119,7 +121,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                 if (var1.isSuccessful()) {
                     dismissLoading();
                     Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
-                    intent.putExtra("ZCBLVideoSurveyModel", (Serializable) ZCBLVideoSurveyModel);
+                    intent.putExtra("ZCBLVideoSurveyModel", (Serializable) zcblVideoSurveyModel);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
                 } else {
@@ -134,7 +136,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
 
 
-    private void requestPermissions() {
+    private void requestPermissions(boolean isClick) {
         int sdk=android.os.Build.VERSION.SDK_INT;
         if (null != mHelper) {
             mHelper = null ;
@@ -147,14 +149,18 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                     mHelper.requestPermissions(permissions); // 请求权限
                 } else {
                      // 全部权限都已获取
-                    requestConnect();
+                    if(isClick){
+                        requestConnect();
+                    }
                 }
             } else {
                 isRequireCheck = true;
             }
         }else{
             // 全部权限都已获取
-            requestConnect();
+            if(isClick){
+                requestConnect();
+            }
         }
 
     }
@@ -174,30 +180,22 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
     private void requestConnect() {
         showLoading();
-        final String siSurveyNo = "b1c0b8350beb488db3857661b14e4f57";
-        String token = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
-        String time = "2018-01-12 12:05:11";
-        String sign = "445CDED75E57B7C3F53639A2741FF0F4FE7BC614";
-        final String phoneNum = "18201255299";
-        final String carNum = "京CCC112";
-        final String caseAddress = "android sdk";
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("surveyNo",siSurveyNo);
-            jsonObject.put("accesstoken",token );
-            jsonObject.put("timestamp", time);
-            jsonObject.put("sign", sign);
+            jsonObject.put("accesstoken",phoneNum );
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new ZCBLHttpUtils.UpdateCallback() {
             @Override
-            public void onError(String error) {
+            public void onError(final String error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         dismissLoading();
+                        ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,error);
                     }
                 });
             }
@@ -207,17 +205,18 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                 ZCBLVideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.i(TAG,"--------视频请求连接---response---------->" + response);
+                        Log.i(TAG,"--------视频请求连接接口---response---------->" + response);
                         try {
                             JSONObject obj = new JSONObject(response);
                             JSONObject data = obj.optJSONObject("data");
                             int bindIdleCode = data.optInt("bindIdleCode");
                             if(200 == bindIdleCode){
-                                syncCommandNodePath = data.optString("syncCommandNodePath");
+                                String syncCommandNodePath = data.optString("syncCommandNodePath");
                                 syncVideoConnectCommandNodePath = data.optString("syncVideoConnectCommandNodePath");
-                                videoRoomId = data.optString("videoRoomId");
-                                ZCBLVideoSurveyModel = new ZCBLVideoSurveyModel(siSurveyNo,phoneNum,carNum,longitude+"100",latitude+"90",caseAddress,
-                                        videoRoomId,syncCommandNodePath,syncVideoConnectCommandNodePath);
+                                String videoRoomId = data.optString("videoRoomId");
+                                zcblVideoSurveyModel.setVideoRoomId(videoRoomId);
+                                zcblVideoSurveyModel.setSyncCommandNodePath(syncCommandNodePath);
+                                zcblVideoSurveyModel.setSyncVideoConnectCommandNodePath(syncVideoConnectCommandNodePath);
                                 addWilddogListener();
                             }else{
                                 dismissLoading();
@@ -255,7 +254,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String type = dataSnapshot.getValue().toString();
-                Log.i(TAG, "onChildAdded: "+type);
                 if (!TextUtils.isEmpty(type)) {
                     if ("WEB$$goToConnection".equals(type) ) {
                         if (null != handler) {
@@ -347,8 +345,8 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         if (id == R.id.video_transition_goback) {
             finish();
         } else if (id == R.id.video_transition_commit) {
-            // TODO: 2018/1/12 发起视频连线
-            requestConnect();
+            // 发起视频连线
+            requestPermissions(true);
         }
     }
 

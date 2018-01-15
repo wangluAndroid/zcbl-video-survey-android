@@ -4,7 +4,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
+import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLCheckUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -52,7 +54,7 @@ public class ZCBLHttpUtils {
     }
     private ZCBLHttpUtils() {
 
-        SSLParams sslSocketFactory = getSslSocketFactory(null, null, null);
+//        SSLParams sslSocketFactory = getSslSocketFactory(null, null, null);
         mOkHttpClient=new OkHttpClient
                 .Builder()
                 .readTimeout(20, TimeUnit.SECONDS)//读取超时
@@ -81,13 +83,26 @@ public class ZCBLHttpUtils {
     }
 
     public void post(final String url ,final JSONObject json, final UpdateCallback updateCallback){
+//        final String URL = ZCBLConstants.IS_DEBUG?(ZCBLConstants.BASE_URL_TEST+url):(ZCBLConstants.BASE_URL_RELEASE+url);
+        final String URL = ZCBLConstants.BASE_URL+url;
+        Log.e(ZCBLConstants.TAG, "--------请求发起------>"+URL);
+        if(ZCBLCheckUtils.checkStringEmpty(URL)){
+            updateCallback.onError("请求地址不能为空");
+            Log.e(ZCBLConstants.TAG, "请求地址不能为空");
+            return ;
+        }
+        if(!URL.startsWith("http")){
+            updateCallback.onError("请求地址格式有误");
+            Log.e(ZCBLConstants.TAG, "请求地址格式有误，不是以http开头");
+            return ;
+        }
         new Thread(new Runnable() {
             @Override
             public void run() {
                 RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"),json.toString());
-                Request request = new Request.Builder()
+                final Request request = new Request.Builder()
                         .addHeader("Content-Type","application/json")
-                        .url(url)
+                        .url(URL)
                         .post(requestBody)
                         .build();
                 mOkHttpClient.newCall(request)
@@ -95,22 +110,28 @@ public class ZCBLHttpUtils {
                             @Override
                             public void onFailure(Call call, IOException e) {
                                 Log.i(ZCBLConstants.TAG,"-----------HttpUtils请求---onFailure----->" + e.toString());
-                                updateCallback.onError(e.toString());
+                                updateCallback.onError("接口请求失败，url:"+url+",error："+e.toString());
                             }
 
                             @Override
                             public void onResponse(Call call, final Response response) throws IOException {
                                 String result = response.body().string();
                                 Log.i(ZCBLConstants.TAG,"------------HttpUtils请求---onResponse---->"+result);
-                                if(!TextUtils.isEmpty(result)){
-                                    if(result.contains("\"rescode\":\"200\"")){
+                                try {
+                                    JSONObject object = new JSONObject(result);
+                                    int rescode = object.optInt("rescode");
+                                    if (200 == rescode) {
                                         updateCallback.onSuccess(result);
-
+                                    }else if(201 == rescode){
+                                        String resdes = object.optString("resdes");
+                                        updateCallback.onError(resdes);
                                     }else{
-                                        updateCallback.onError("图片上传返回失败");
+                                        String resdes = object.optString("resdes");
+                                        updateCallback.onError(resdes);
                                     }
-                                }else{
-                                    updateCallback.onError("图片上传返回失败");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                    updateCallback.onError("后台返回数据格式解析错误");
                                 }
                             }
                         });
