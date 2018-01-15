@@ -49,7 +49,6 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.GO_TO_VIDEO_ROOM;
 import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURVEY_IS_OVER;
 
 
@@ -245,7 +244,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                         controlCameraLight();
 //                        Toast.makeText(ZCBLVideoSurveyActivity.this, "关闭闪光灯", Toast.LENGTH_LONG).show();
                     } else if ("WEB$$surveyIsOver".equals(type)) {
-                        ZCBLVideoSurveyActivity.this.setResult(GO_TO_VIDEO_ROOM);
+                        ZCBLVideoSurveyActivity.this.setResult(VIDEO_SURVEY_IS_OVER);
                         ZCBLVideoSurveyActivity.this.finish();
                     }
 
@@ -306,6 +305,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
              */
             @Override
             public void onStreamAdded(WilddogRoom wilddogRoom, RoomStream roomStream) {
+//                Log.e(ZCBLConstants.TAG, "--------------onStreamAdded------------->"+roomStream.getStreamId());
                 room.subscribe(roomStream, new CompleteListener() {
                     @Override
                     public void onComplete(WilddogVideoError wilddogVideoError) {
@@ -398,6 +398,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     @Override
     protected void onDestroy() {
         super.onDestroy();
+//        b1c0b8350beb488db3857661b14e4f57
         Log.w(ZCBLConstants.TAG,"-------------ZCBLVideoSurveyActivity----onDestory--------");
         leaveRoom();
         if (null != syncReference) {
@@ -537,7 +538,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 //                        leaveRoom();
-                        setResult(GO_TO_VIDEO_ROOM);
+                        setResult(VIDEO_SURVEY_IS_OVER);
                         finish();
                     }
                 });
@@ -571,7 +572,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     protected void onStop() {
         super.onStop();
         leaveRoom();
-        setResult(GO_TO_VIDEO_ROOM);
+        setResult(VIDEO_SURVEY_IS_OVER);
         finish();
     }
 }

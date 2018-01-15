@@ -1,10 +1,11 @@
-package com.zcbl.client.zcbl_video_survey_library;
+package com.zcbl.client.zcbl_video_survey_library.ui.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
@@ -28,10 +29,11 @@ import com.wilddog.wilddogauth.WilddogAuth;
 import com.wilddog.wilddogauth.core.Task;
 import com.wilddog.wilddogauth.core.listener.OnCompleteListener;
 import com.wilddog.wilddogauth.core.result.AuthResult;
+import com.zcbl.client.zcbl_video_survey_library.R;
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLToastUtils;
-import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyActivity;
 import com.zcbl.client.zcbl_video_survey_library.ui.customview.ZCBLCustomLoadingDialogManager;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLPermissionHelper;
 
@@ -53,6 +55,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     private TextView tv_descption;
     private ImageView iv_transition_image ;
     private Button but_start_video ;
+    private ImageView video_transition_tel;
     private static final String PACKAGE_URL_SCHEME = "package:"; // 方案
     private static final String TAG = "ZCBL_WilddogVideoModule";
     private ZCBLPermissionHelper mHelper; // 权限检测器
@@ -64,10 +67,33 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     private String siSurveyNo ;
     private String phoneNum ;
     private String syncVideoConnectCommandNodePath ;
+    private String customerServicePhone;
 
     private ChildEventListener childEventListener;
 
     private ZCBLCustomLoadingDialogManager loading_dialog;
+    private CountDownTimer timer = new CountDownTimer(16*1000, 1000) {
+        @Override
+        public void onTick(long millisUntilFinished) {
+            but_start_video.setEnabled(false);
+            but_start_video.setBackgroundResource(R.drawable.button_disable);
+            but_start_video.setTextColor(getResources().getColor(R.color.color_ffffff));
+            but_start_video.setText("坐席繁忙，请稍后重试  "+ millisUntilFinished / 1000 + "s");
+            tv_descption.setText(R.string.text_zuoxi_busy);
+            video_transition_title.setText(R.string.text_zuoxi_busy);
+        }
+
+        @Override
+        public void onFinish() {
+            iv_transition_image.setImageResource(R.drawable.ic_zuoxi_free);
+            but_start_video.setEnabled(true);
+            but_start_video.setText(R.string.but_zuoxi_free);
+            but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
+            tv_descption.setText(R.string.text_zuoxi_free);
+            video_transition_title.setText(R.string.title_video_connection);
+        }
+    };
+
     private Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -75,12 +101,14 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             int what = msg.what;
             Log.e(TAG, "视频建立连接异常，无法正常连接，35sAPP端重置");
             if (1 == what) {
+                startCountdownAndDismissLoading();
                 removeSync();
-                dismissLoading();
                 ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
             }
         }
     };
+    private TextView video_transition_title;
+
 
     /**
      * 初始化生命周期方法
@@ -107,6 +135,9 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         iv_transition_image = (ImageView) findViewById(R.id.video_transition_image);
         tv_descption = (TextView) findViewById(R.id.video_transition_description);
         but_start_video = (Button)findViewById(R.id.video_transition_commit);
+        video_transition_tel = (ImageView) findViewById(R.id.video_transition_tel);
+        video_transition_title = (TextView) findViewById(R.id.video_transition_title);
+        video_transition_tel.setOnClickListener(this);
         iv_goback.setOnClickListener(this);
         but_start_video.setOnClickListener(this);
 
@@ -119,13 +150,14 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             @Override
             public void onComplete(Task<AuthResult> var1) {
                 if (var1.isSuccessful()) {
+                    resumeStatus();
                     dismissLoading();
                     Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
                     intent.putExtra("ZCBLVideoSurveyModel", (Serializable) zcblVideoSurveyModel);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
                 } else {
-                    dismissLoading();
+                    startCountdownAndDismissLoading();
                     ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this, "登录失败,请查看日志寻找失败原因");
                     Log.e("error", var1.getException().getMessage());
                 }
@@ -170,7 +202,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == ZCBLPermissionHelper.PERMISSION_REQUEST_CODE && hasAllPermissionsGranted(grantResults)) {
             isRequireCheck = true;
-            // TODO: 2018/1/12 进行视频token请求 然后请求连接视频
             requestConnect();
         } else {
             isRequireCheck = false;
@@ -194,7 +225,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        dismissLoading();
+                        startCountdownAndDismissLoading();
                         ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,error);
                     }
                 });
@@ -219,11 +250,15 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                                 zcblVideoSurveyModel.setSyncVideoConnectCommandNodePath(syncVideoConnectCommandNodePath);
                                 addWilddogListener();
                             }else{
-                                dismissLoading();
+                                startCountdownAndDismissLoading();
                                 ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
                             }
+                            customerServicePhone = obj.optString("customerServicePhone");
+                            if (!TextUtils.isEmpty(customerServicePhone)) {
+                                video_transition_tel.setVisibility(View.VISIBLE);
+                            }
                         } catch (JSONException e) {
-                            dismissLoading();
+                            startCountdownAndDismissLoading();
                             e.printStackTrace();
                         }
                     }
@@ -266,7 +301,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                         if (null != handler) {
                             handler.removeMessages(1);
                         }
-                        dismissLoading();
+                        startCountdownAndDismissLoading();
                         removeSync();
                         ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
                         Log.i(ZCBLConstants.TAG,"-----------refuseConnection---------------");
@@ -295,6 +330,16 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
             }
         });
+    }
+
+    /**
+     * 启动倒计时 隐藏加载框
+     */
+    private void startCountdownAndDismissLoading() {
+        if (null != timer) {
+            timer.start();
+        }
+        dismissLoading();
     }
 
     /**
@@ -347,6 +392,12 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         } else if (id == R.id.video_transition_commit) {
             // 发起视频连线
             requestPermissions(true);
+        } else if (id == R.id.video_transition_tel) {
+            //呼客服
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            Uri data = Uri.parse("tel:" + customerServicePhone);
+            intent.setData(data);
+            startActivity(intent);
         }
     }
 
@@ -370,9 +421,10 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
     private void showLoading(){
         iv_transition_image.setImageResource(R.drawable.ic_zuoxi_busy);
-        tv_descption.setText(R.string.text_zuoxi_busy);
+        tv_descption.setText(R.string.text_zuoxi_connecting);
         but_start_video.setBackgroundResource(R.drawable.button_disable);
         but_start_video.setTextColor(getResources().getColor(R.color.color_ffffff));
+        video_transition_title.setText(R.string.text_zuoxi_connecting);
         if(null == loading_dialog){
             loading_dialog = new ZCBLCustomLoadingDialogManager(this).initDialog().showDialog();
         }
@@ -381,11 +433,21 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         }
     }
     private void dismissLoading(){
-        iv_transition_image.setImageResource(R.drawable.ic_zuoxi_free);
-        tv_descption.setText(R.string.text_zuoxi_free);
-        but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
+
         if (null != loading_dialog) {
             loading_dialog.dismissDialog();
         }
+    }
+
+    /**
+     * 恢复UI初始状态
+     */
+    private void resumeStatus(){
+        iv_transition_image.setImageResource(R.drawable.ic_zuoxi_free);
+        but_start_video.setEnabled(true);
+        but_start_video.setText(R.string.but_zuoxi_free);
+        but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
+        tv_descption.setText(R.string.text_zuoxi_free);
+        video_transition_title.setText(R.string.title_video_connection);
     }
 }

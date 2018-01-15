@@ -6,10 +6,12 @@ import com.wilddog.wilddogcore.WilddogApp;
 import com.wilddog.wilddogcore.WilddogOptions;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyConnectTransionActivity;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLCheckUtils;
 
 /**
  * Created by serenitynanian on 2018/1/12.
+ * 中车初始化sdk
  */
 
 public class ZCBLSDK {
@@ -35,7 +37,6 @@ public class ZCBLSDK {
      */
     public static void setDedug(boolean isOpenDebug){
         if(isOpenDebug){
-            ZCBLConstants.IS_DEBUG = true;
             ZCBLConstants.BASE_URL = "https://survey.zhongchebaolian.com/";
         }
     }

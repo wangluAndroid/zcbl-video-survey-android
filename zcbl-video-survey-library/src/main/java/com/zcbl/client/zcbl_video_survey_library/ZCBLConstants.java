@@ -9,7 +9,6 @@ import android.Manifest;
 public class ZCBLConstants {
 
     public static final String TAG = "ZCBL";
-    public static boolean IS_DEBUG = false;
 
     public static final int GO_TO_CONNECTION = 0;
     public static final int REFUSE_CONNECTION = 1;

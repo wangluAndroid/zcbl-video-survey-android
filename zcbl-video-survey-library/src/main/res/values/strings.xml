@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">zcbl-video-survey-library</string>
-    <string name="video_connection">视频等待连接</string>
+    <string name="title_video_connection">视频等待连接</string>
     <string name="text_zuoxi_free">坐席空闲请立即发起视频连线</string>
-    <string name="text_zuoxi_busy">视频连线中，请稍后...</string>
+    <string name="text_zuoxi_connecting">寻找空闲坐席中，请稍后...</string>
+    <string name="text_zuoxi_busy">坐席繁忙，请稍后重试...</string>
     <string name="but_zuoxi_busy">视频连线中，请稍后...</string>
+    <string name="but_zuoxi_free">建立视频查勘</string>
+
 </resources>
