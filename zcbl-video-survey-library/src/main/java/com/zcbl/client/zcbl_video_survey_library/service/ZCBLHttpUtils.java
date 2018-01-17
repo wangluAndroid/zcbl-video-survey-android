@@ -1,6 +1,5 @@
 package com.zcbl.client.zcbl_video_survey_library.service;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
@@ -42,16 +41,11 @@ import okhttp3.Response;
 /**
  * Created by serenitynanian on 2017/12/15.
  */
-
 public class ZCBLHttpUtils {
 
     private static ZCBLHttpUtils mInstance;
     private OkHttpClient mOkHttpClient;
 
-    public interface UpdateCallback{
-        void onError(String error);
-        void onSuccess(String response);
-    }
     private ZCBLHttpUtils() {
 
 //        SSLParams sslSocketFactory = getSslSocketFactory(null, null, null);
@@ -82,17 +76,17 @@ public class ZCBLHttpUtils {
         return mInstance;
     }
 
-    public void post(final String url ,final JSONObject json, final UpdateCallback updateCallback){
+    public void post(final String url ,final JSONObject json, final UpdateCallbackInterface updateCallbackInterface){
 //        final String URL = ZCBLConstants.IS_DEBUG?(ZCBLConstants.BASE_URL_TEST+url):(ZCBLConstants.BASE_URL_RELEASE+url);
         final String URL = ZCBLConstants.BASE_URL+url;
         Log.e(ZCBLConstants.TAG, "--------请求发起------>"+URL);
         if(ZCBLCheckUtils.checkStringEmpty(URL)){
-            updateCallback.onError("请求地址不能为空");
+            updateCallbackInterface.onError("请求地址不能为空");
             Log.e(ZCBLConstants.TAG, "请求地址不能为空");
             return ;
         }
         if(!URL.startsWith("http")){
-            updateCallback.onError("请求地址格式有误");
+            updateCallbackInterface.onError("请求地址格式有误");
             Log.e(ZCBLConstants.TAG, "请求地址格式有误，不是以http开头");
             return ;
         }
@@ -110,7 +104,7 @@ public class ZCBLHttpUtils {
                             @Override
                             public void onFailure(Call call, IOException e) {
                                 Log.i(ZCBLConstants.TAG,"-----------HttpUtils请求---onFailure----->" + e.toString());
-                                updateCallback.onError("接口请求失败，url:"+url+",error："+e.toString());
+                                updateCallbackInterface.onError("接口请求失败，url:"+url+",error："+e.toString());
                             }
 
                             @Override
@@ -121,17 +115,17 @@ public class ZCBLHttpUtils {
                                     JSONObject object = new JSONObject(result);
                                     int rescode = object.optInt("rescode");
                                     if (200 == rescode) {
-                                        updateCallback.onSuccess(result);
+                                        updateCallbackInterface.onSuccess(result);
                                     }else if(201 == rescode){
                                         String resdes = object.optString("resdes");
-                                        updateCallback.onError(resdes);
+                                        updateCallbackInterface.onError(resdes);
                                     }else{
                                         String resdes = object.optString("resdes");
-                                        updateCallback.onError(resdes);
+                                        updateCallbackInterface.onError(resdes);
                                     }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
-                                    updateCallback.onError("后台返回数据格式解析错误");
+                                    updateCallbackInterface.onError("后台返回数据格式解析错误");
                                 }
                             }
                         });

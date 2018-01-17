@@ -10,11 +10,28 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters "armeabi-v7a"
+//            abiFilters "armeabi-v7a", "x86"
+//            abiFilters "armeabi"
+        }
     }
+    signingConfigs {
+        release {
+            storeFile file(MYAPP_RELEASE_STORE_FILE)
+            storePassword MYAPP_RELEASE_STORE_PASSWORD
+            keyAlias MYAPP_RELEASE_KEY_ALIAS
+            keyPassword MYAPP_RELEASE_KEY_PASSWORD
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+//            shrinkResources true
+//            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -36,6 +53,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
-//    compile 'com.zcbl.client:zcbl-video-survey-library:1.0.3'
+//    compile 'com.zcbl.android:zcbl-video-survey-library:1.0.0'
     compile project(':zcbl-video-survey-library')
 }

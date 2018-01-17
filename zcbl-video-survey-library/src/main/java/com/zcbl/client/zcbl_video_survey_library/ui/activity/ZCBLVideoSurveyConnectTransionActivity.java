@@ -32,6 +32,7 @@ import com.wilddog.wilddogauth.core.result.AuthResult;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.service.UpdateCallbackInterface;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLToastUtils;
 import com.zcbl.client.zcbl_video_survey_library.ui.customview.ZCBLCustomLoadingDialogManager;
@@ -202,7 +203,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == ZCBLPermissionHelper.PERMISSION_REQUEST_CODE && hasAllPermissionsGranted(grantResults)) {
             isRequireCheck = true;
-            requestConnect();
+//            requestConnect();
         } else {
             isRequireCheck = false;
             showMissingPermissionDialog();
@@ -219,7 +220,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             e.printStackTrace();
         }
 
-        ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new ZCBLHttpUtils.UpdateCallback() {
+        ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new UpdateCallbackInterface() {
             @Override
             public void onError(final String error) {
                 runOnUiThread(new Runnable() {
@@ -366,6 +367,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 isRequireCheck = true ;
+//                finish();
 
             }
         });

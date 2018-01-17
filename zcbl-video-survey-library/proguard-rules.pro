@@ -23,3 +23,16 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+#----------------wilddog-----------------------
+-keep class com.fasterxml.jackson.**{*;}
+-keep class com.fasterxml.jackson.databind.**{*;}
+-keep class com.fasterxml.jackson.core.**{*;}
+
+-keep class org.webrtc.**{*;}
+-keep class de.tavendo.autobahn.**{*;}
+-keep class com.wilddog.video.**{*;}
+-keep class com.wilddog.client.**{*;}
+-keep class com.wilddog.wilddogauth.**{*;}
+
+#------------------self-----------------------
+-keep class com.zcbl.client.zcbl_video_survey_library.**{*;}

@@ -22,6 +22,7 @@ public class ZCBLConstants {
     public static final String[] PERMISSIONS = new String[]{
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CAMERA,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
     public static String BASE_URL ="https://chakan.zhongchebaolian.com/";//生产环境

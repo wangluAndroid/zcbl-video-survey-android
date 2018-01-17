@@ -37,6 +37,7 @@ import com.wilddog.wilddogauth.WilddogAuth;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
+import com.zcbl.client.zcbl_video_survey_library.service.UpdateCallbackInterface;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLBluetoothConnectionReceiver;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLHeadsetReceiver;
@@ -141,7 +142,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                ZCBLHttpUtils.getInstance().post(ZCBLConstants.UPLOAD_IMAGE_URL,json,new ZCBLHttpUtils.UpdateCallback() {
+                ZCBLHttpUtils.getInstance().post(ZCBLConstants.UPLOAD_IMAGE_URL,json,new UpdateCallbackInterface() {
                     @Override
                     public void onError(String error) {
                         ZCBLVideoSurveyActivity.this.runOnUiThread(new Runnable() {
