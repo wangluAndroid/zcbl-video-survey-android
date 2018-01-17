@@ -7,6 +7,7 @@ import android.widget.TextView;
 
 import com.zcbl.client.zcbl_video_survey_library.ZCBLSDK;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
+import com.zcbl.client.zcbl_video_survey_library.service.ZCBLCrashHandler;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         text = (TextView) findViewById(R.id.text);
         text.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -32,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
                 surveyModel.setLatitude("90.000");
                 surveyModel.setLongitude("125.000");
                 ZCBLSDK.goToVideoSurvey(MainActivity.this, surveyModel);
+                //测试bug统计
+//                ZCBLCrashHandler.getInstance().init(MainActivity.this);
+//                String str = null ;
+//                System.out.println(str.toString());
             }
         });
     }

@@ -216,6 +216,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         try {
             jsonObject.put("surveyNo",siSurveyNo);
             jsonObject.put("accesstoken",phoneNum );
+            jsonObject.put("useApp",0);//0:自己app  1：其他第三方app
         } catch (JSONException e) {
             e.printStackTrace();
         }

@@ -100,18 +100,18 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private void registerBroadcast() {
 
         //动态注册耳机插入广播
-        zcblHeadsetReceiver = new ZCBLHeadsetReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("android.intent.action.HEADSET_PLUG");
-        this.registerReceiver(zcblHeadsetReceiver, intentFilter);
-
-        //动态注册蓝牙广播
-        blueAudioNoisyReceiver = new ZCBLBluetoothConnectionReceiver();
-        //蓝牙状态广播监听
-        IntentFilter audioFilter = new IntentFilter();
-        audioFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);//蓝牙设备连接或断开
-        audioFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);//本机开启、关闭蓝牙开关
-        this.registerReceiver(blueAudioNoisyReceiver, audioFilter);
+//        zcblHeadsetReceiver = new ZCBLHeadsetReceiver();
+//        IntentFilter intentFilter = new IntentFilter();
+//        intentFilter.addAction("android.intent.action.HEADSET_PLUG");
+//        this.registerReceiver(zcblHeadsetReceiver, intentFilter);
+//
+//        //动态注册蓝牙广播
+//        blueAudioNoisyReceiver = new ZCBLBluetoothConnectionReceiver();
+//        //蓝牙状态广播监听
+//        IntentFilter audioFilter = new IntentFilter();
+//        audioFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);//蓝牙设备连接或断开
+//        audioFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);//本机开启、关闭蓝牙开关
+//        this.registerReceiver(blueAudioNoisyReceiver, audioFilter);
 
     }
 

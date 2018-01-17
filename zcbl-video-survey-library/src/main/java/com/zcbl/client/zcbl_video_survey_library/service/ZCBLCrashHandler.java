@@ -7,6 +7,9 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Log;
+
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -77,6 +80,9 @@ public class ZCBLCrashHandler implements Thread.UncaughtExceptionHandler {
 
         //延时1秒杀死进程
         SystemClock.sleep(1000);
+        //退出程序
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(1);
     }
 
 
@@ -87,6 +93,7 @@ public class ZCBLCrashHandler implements Thread.UncaughtExceptionHandler {
         try {
             // 异常信息
             String crashReport = getCrashReport(ex);
+            Log.e(ZCBLConstants.TAG, "handlelException: "+crashReport);
             // TODO: 上传日志到服务器
             // 保存到sd卡
             dumpExceptionToSDCard(ex);

@@ -75,7 +75,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     testCompile 'junit:junit:4.12'
 
-    compile ('com.wilddog.client:wilddog-video-room-android:latest.release'){
+    compile ('com.wilddog.client:wilddog-video-room-android:2.3.2'){
         exclude group:"com.squareup.okhttp3",module:"okhttp"
     }
     compile ('com.wilddog.client:wilddog-auth-android:latest.release'){

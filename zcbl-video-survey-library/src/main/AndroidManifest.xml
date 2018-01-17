@@ -53,18 +53,19 @@
                 <action android:name="com.wilddog.wilddogauth.signoutsuccess"/>
             </intent-filter>
         </receiver>
-        <receiver android:name=".ui.receiver.ZCBLHeadsetReceiver"
-            android:enabled="true"
-            android:exported="true"
-            >
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.HEADSET_PLUG"/>-->
-            <!--</intent-filter>-->
-        </receiver>
-        <receiver android:name=".ui.receiver.ZCBLBluetoothConnectionReceiver"
-            android:exported="true"
-            android:enabled="true"
-            />
+
+        <!--<receiver android:name=".ui.receiver.ZCBLHeadsetReceiver"-->
+            <!--android:enabled="true"-->
+            <!--android:exported="true"-->
+            <!--&gt;-->
+            <!--&lt;!&ndash;<intent-filter>&ndash;&gt;-->
+            <!--&lt;!&ndash;<action android:name="android.intent.action.HEADSET_PLUG"/>&ndash;&gt;-->
+            <!--&lt;!&ndash;</intent-filter>&ndash;&gt;-->
+        <!--</receiver>-->
+        <!--<receiver android:name=".ui.receiver.ZCBLBluetoothConnectionReceiver"-->
+            <!--android:exported="true"-->
+            <!--android:enabled="true"-->
+            <!--/>-->
 
     </application>
 
