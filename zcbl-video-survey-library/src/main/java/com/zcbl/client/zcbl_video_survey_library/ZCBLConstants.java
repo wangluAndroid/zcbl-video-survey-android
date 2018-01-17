@@ -10,13 +10,9 @@ public class ZCBLConstants {
 
     public static final String TAG = "ZCBL";
 
-    public static final int GO_TO_CONNECTION = 0;
-    public static final int REFUSE_CONNECTION = 1;
-    public static final int GO_TO_VIDEO_ROOM = 2;
-    public static final int SURVEY_IS_OVER = 3;
-    public static final int DISSMISS_DIALOG = 4;
-    public static final int PERMISSIONS_REFUSE = 5;
-    public static final int VIDEO_SURVEY_IS_OVER = 6;
+
+    public static final int GO_TO_VIDEO_ROOM = 1;
+    public static final int VIDEO_SURVEY_IS_OVER = 2;
 
     // 所需的全部权限
     public static final String[] PERMISSIONS = new String[]{

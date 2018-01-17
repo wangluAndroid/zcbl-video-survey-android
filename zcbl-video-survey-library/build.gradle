@@ -7,7 +7,7 @@ def gitUrl = 'https://github.com/wangluAndroid/zcbl-video-survey-android.git'   
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
-version = "1.0.0" //发布版本号
+version = "1.0.1" //发布版本号
 group = "com.zcbl.android" //最终引用形式，如compile 'com.zcbl.client:zcbl-video-survey-library:1.0.0'，其中lfilepicker在后面配置
 android {
     compileSdkVersion 26
