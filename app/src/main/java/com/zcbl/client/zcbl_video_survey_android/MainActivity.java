@@ -1,5 +1,6 @@
 package com.zcbl.client.zcbl_video_survey_android;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -23,8 +24,9 @@ public class MainActivity extends AppCompatActivity {
         text.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final String siSurveyNo = "b1c0b8350beb488db3857661b14e4f57";
-                final String phoneNum = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
+                //final String phoneNum = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
+                final String siSurveyNo = "a61bf288f6124757b774bb7f41c1d170";
+                final String phoneNum = "18951735723";
                 final String caseAddress = "北京市天安门广场";
                 //此model为中车视频查勘实体类
                 ZCBLRequireParamsModel surveyModel = new ZCBLRequireParamsModel();

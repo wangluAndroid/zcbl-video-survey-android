@@ -79,7 +79,8 @@ public class ZCBLHttpUtils {
     public void post(final String url ,final JSONObject json, final UpdateCallbackInterface updateCallbackInterface){
 //        final String URL = ZCBLConstants.IS_DEBUG?(ZCBLConstants.BASE_URL_TEST+url):(ZCBLConstants.BASE_URL_RELEASE+url);
         final String URL = ZCBLConstants.BASE_URL+url;
-        Log.e(ZCBLConstants.TAG, "--------请求发起------>"+URL);
+        Log.e(ZCBLConstants.TAG, "-----service---请求发起URL------>"+URL);
+        Log.e(ZCBLConstants.TAG, "-----service---请求发起json------>"+json.toString());
         if(ZCBLCheckUtils.checkStringEmpty(URL)){
             updateCallbackInterface.onError("请求地址不能为空");
             Log.e(ZCBLConstants.TAG, "请求地址不能为空");
@@ -103,14 +104,14 @@ public class ZCBLHttpUtils {
                         .enqueue(new Callback() {
                             @Override
                             public void onFailure(Call call, IOException e) {
-                                Log.i(ZCBLConstants.TAG,"-----------HttpUtils请求---onFailure----->" + e.toString());
+                                Log.i(ZCBLConstants.TAG,"-----service------HttpUtils请求---onFailure----->" + e.toString());
                                 updateCallbackInterface.onError("接口请求失败，url:"+url+",error："+e.toString());
                             }
 
                             @Override
                             public void onResponse(Call call, final Response response) throws IOException {
                                 String result = response.body().string();
-                                Log.i(ZCBLConstants.TAG,"------------HttpUtils请求---onResponse---->"+result);
+                                Log.i(ZCBLConstants.TAG,"-----service-------HttpUtils请求---onResponse---->"+result);
                                 try {
                                     JSONObject object = new JSONObject(result);
                                     int rescode = object.optInt("rescode");

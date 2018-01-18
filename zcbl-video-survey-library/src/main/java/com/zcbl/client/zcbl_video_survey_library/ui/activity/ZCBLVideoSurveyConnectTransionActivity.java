@@ -82,16 +82,12 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             but_start_video.setText("坐席繁忙，请稍后重试  "+ millisUntilFinished / 1000 + "s");
             tv_descption.setText(R.string.text_zuoxi_busy);
             video_transition_title.setText(R.string.text_zuoxi_busy);
+            iv_transition_image.setImageResource(R.drawable.ic_zuoxi_busy);
         }
 
         @Override
         public void onFinish() {
-            iv_transition_image.setImageResource(R.drawable.ic_zuoxi_free);
-            but_start_video.setEnabled(true);
-            but_start_video.setText(R.string.but_zuoxi_free);
-            but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
-            tv_descption.setText(R.string.text_zuoxi_free);
-            video_transition_title.setText(R.string.title_video_connection);
+            resumeStatus();
         }
     };
 
@@ -216,7 +212,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         try {
             jsonObject.put("surveyNo",siSurveyNo);
             jsonObject.put("accesstoken",phoneNum );
-            jsonObject.put("useApp",0);//0:自己app  1：其他第三方app
+            jsonObject.put("useApp",0);//0:其他第三方app  1：自己的app
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -238,7 +234,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                 ZCBLVideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.i(TAG,"--------视频请求连接接口---response---------->" + response);
                         try {
                             JSONObject obj = new JSONObject(response);
                             JSONObject data = obj.optJSONObject("data");
@@ -423,7 +418,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     }
 
     private void showLoading(){
-        iv_transition_image.setImageResource(R.drawable.ic_zuoxi_busy);
+//        iv_transition_image.setImageResource(R.drawable.ic_zuoxi_busy);
         tv_descption.setText(R.string.text_zuoxi_connecting);
         but_start_video.setBackgroundResource(R.drawable.button_disable);
         but_start_video.setTextColor(getResources().getColor(R.color.color_ffffff));
