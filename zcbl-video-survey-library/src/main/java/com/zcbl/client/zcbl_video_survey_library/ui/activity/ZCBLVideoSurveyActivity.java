@@ -42,6 +42,7 @@ import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLBluetoothConnectionReceiver;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLHeadsetReceiver;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLBase64Utils;
+import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
 
 
 import org.json.JSONException;
@@ -365,7 +366,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 
     private void initRoomSDK() {
         LogUtil.setLogLevel(Logger.Level.DEBUG);
-        WilddogVideoInitializer.initialize(ZCBLVideoSurveyActivity.this, ZCBLConstants.WILDDOG_VIDEO_ID, WilddogAuth.getInstance().getCurrentUser().getToken(false).getResult().getToken());
+        WilddogVideoInitializer.initialize(ZCBLVideoSurveyActivity.this, NativeData.getVideoKey(), WilddogAuth.getInstance().getCurrentUser().getToken(false).getResult().getToken());
         initializer = WilddogVideoInitializer.getInstance();
     }
 

@@ -8,6 +8,7 @@ import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyConnectTransionActivity;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLCheckUtils;
+import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
 
 /**
  * Created by serenitynanian on 2018/1/12.
@@ -18,7 +19,7 @@ public class ZCBLSDK {
 
     public static void init(Context context){
         // 初始化
-        WilddogOptions syncOptions = new WilddogOptions.Builder().setSyncUrl("https://"+ ZCBLConstants.WILDDOG_APP_ID+".wilddogio.com").build();
+        WilddogOptions syncOptions = new WilddogOptions.Builder().setSyncUrl("https://"+ NativeData.getAppId()+".wilddogio.com").build();
         WilddogApp.initializeApp(context, syncOptions);
     }
 

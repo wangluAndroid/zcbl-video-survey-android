@@ -25,6 +25,5 @@ public class ZCBLConstants {
 
     public static final String UPLOAD_IMAGE_URL = "boot-zcbl-survey-api/v1/upload/photo";
     public static final String VIDEO_CONNECTION_URL = "boot-zcbl-survey-api/survey/v1/video/connect";
-    public static final String WILDDOG_VIDEO_ID = "wd6476157034byycgg";
-    public static final String WILDDOG_APP_ID = "wd7055430119ruyynm";
+
 }
