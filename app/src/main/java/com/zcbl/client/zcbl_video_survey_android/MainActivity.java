@@ -9,6 +9,7 @@ import android.widget.TextView;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLSDK;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLCrashHandler;
+import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
 
 
 public class MainActivity extends AppCompatActivity {

@@ -170,9 +170,10 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         if (null != mHelper) {
             mHelper = null ;
         }
-        mHelper = new ZCBLPermissionHelper(this);
         if (sdk>=23){
             if (isRequireCheck) {
+                mHelper = new ZCBLPermissionHelper(this);
+
                 String[] permissions = ZCBLConstants.PERMISSIONS;
                 if (mHelper.lacksPermissions(permissions)) {
                     mHelper.requestPermissions(permissions); // 请求权限

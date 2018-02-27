@@ -7,7 +7,7 @@ def gitUrl = 'https://github.com/wangluAndroid/zcbl-video-survey-android.git'   
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
-version = "1.0.6" //发布版本号
+version = "1.0.7" //发布版本号
 group = "com.zcbl.android" //最终引用形式，如compile 'com.zcbl.client:zcbl-video-survey-library:1.0.0'，其中lfilepicker在后面配置
 android {
     compileSdkVersion 26
@@ -100,7 +100,7 @@ bintray {
         websiteUrl = siteUrl
         vcsUrl = gitUrl
         licenses = ['Apache-2.0']//不能随便写，只能是仓库创建时选择的license type
-        userOrg = 'zcbl-spck' //自己创建的organization名称
+        userOrg = 'zcbl-spck' //自己创建的organization名称--也就是organizationIdentifier
         publish = true // 是否是公开项目，公开别人可以引用
 
         version {
