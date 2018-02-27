@@ -3,7 +3,9 @@ package com.zcbl.client.zcbl_video_survey_library.ui.activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -16,8 +18,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.wilddog.client.ChildEventListener;
@@ -105,6 +110,8 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         }
     };
     private TextView video_transition_title;
+    private RelativeLayout video_transition_rl;
+    private int thirdNavigatorBarColor;
 
 
     /**
@@ -116,18 +123,48 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_survey_connect_transition);
         initView();
+        dynamicUpdateNavigatorColor();
         initData();
         requestPermissions(false);
     }
 
-    private void initData() {
+    private void dynamicUpdateNavigatorColor() {
+
         Intent intent = getIntent();
         zcblVideoSurveyModel = (ZCBLVideoSurveyModel) intent.getSerializableExtra("zcbl_model");
+
+        String tempColor = zcblVideoSurveyModel.getNavigatorBarColor();
+        if (!TextUtils.isEmpty(tempColor)) {
+            try {
+                thirdNavigatorBarColor = Color.parseColor(tempColor) ;
+                video_transition_rl.setBackgroundColor(thirdNavigatorBarColor);
+                but_start_video.setBackgroundColor(thirdNavigatorBarColor);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    Window window = getWindow();
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                            | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+                    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                    window.setStatusBarColor(thirdNavigatorBarColor);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "dynamicUpdateNavigatorColor: "+e.toString() );
+                Log.e(TAG, "dynamicUpdateNavigatorColor: 颜色值无法解析");
+            }
+
+        }
+
+    }
+
+    private void initData() {
+
         siSurveyNo = zcblVideoSurveyModel.getSiSurveyNo();
         phoneNum = zcblVideoSurveyModel.getPhoneNum();
     }
 
     private void initView() {
+        video_transition_rl = (RelativeLayout) findViewById(R.id.video_transition_rl);
+
         iv_goback = (ImageView) findViewById(R.id.video_transition_goback);
         iv_transition_image = (ImageView) findViewById(R.id.video_transition_image);
         tv_descption = (TextView) findViewById(R.id.video_transition_description);
@@ -137,7 +174,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         video_transition_tel.setOnClickListener(this);
         iv_goback.setOnClickListener(this);
         but_start_video.setOnClickListener(this);
-
     }
 
 
@@ -445,7 +481,11 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         iv_transition_image.setImageResource(R.drawable.ic_zuoxi_free);
         but_start_video.setEnabled(true);
         but_start_video.setText(R.string.but_zuoxi_free);
-        but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
+        if (0 != thirdNavigatorBarColor) {
+            but_start_video.setBackgroundColor(thirdNavigatorBarColor);
+        }else{
+            but_start_video.setBackgroundResource(R.drawable.ripple_selector_button);
+        }
         tv_descption.setText(R.string.text_zuoxi_free);
         video_transition_title.setText(R.string.title_video_connection);
     }

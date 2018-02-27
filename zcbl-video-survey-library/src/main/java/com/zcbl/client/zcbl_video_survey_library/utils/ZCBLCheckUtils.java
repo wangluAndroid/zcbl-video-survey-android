@@ -40,6 +40,7 @@ public class ZCBLCheckUtils {
         String longitude = params.getLongitude();
         String latitude = params.getLatitude();
         String caseAddress = params.getCaseAddress();
+        String navigatorBarColor = params.getNavigatorBarColor();
         if(ZCBLCheckUtils.checkStringEmpty(siSurveyNo)){
             ZCBLToastUtils.showToast(context,"报案号不能为空");
             return null;
@@ -56,7 +57,7 @@ public class ZCBLCheckUtils {
             ZCBLToastUtils.showToast(context,"地理详细位置不能为空");
             return null;
         }
-        ZCBLVideoSurveyModel model = new ZCBLVideoSurveyModel(siSurveyNo, phoneNum, longitude, latitude, caseAddress, "", "", "");
+        ZCBLVideoSurveyModel model = new ZCBLVideoSurveyModel(siSurveyNo, phoneNum, longitude, latitude, caseAddress, "", "", "",navigatorBarColor);
         return model;
     }
 }

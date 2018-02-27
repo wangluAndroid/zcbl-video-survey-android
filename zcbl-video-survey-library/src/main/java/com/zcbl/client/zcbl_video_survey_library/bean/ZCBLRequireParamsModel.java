@@ -33,7 +33,29 @@ public class ZCBLRequireParamsModel implements Serializable{
      */
     private String caseAddress;
 
+    /**
+     * 导航条和状态栏颜色--针对5.0以上
+     */
+    private String navigatorBarColor ;
+
     public ZCBLRequireParamsModel() {
+    }
+
+    /**
+     * @param siSurveyNo 事故查勘号
+     * @param phoneNum 当前APP登录手机号
+     * @param longitude 报案事故时经度
+     * @param latitude 报案事故时纬度
+     * @param caseAddress 报案事故详细地点
+     * @param navigatorBarColor 导航栏和状态栏颜色
+     */
+    public ZCBLRequireParamsModel(String siSurveyNo, String phoneNum, String longitude, String latitude, String caseAddress, String navigatorBarColor) {
+        this.siSurveyNo = siSurveyNo;
+        this.phoneNum = phoneNum;
+        this.longitude = longitude;
+        this.latitude = latitude;
+        this.caseAddress = caseAddress;
+        this.navigatorBarColor = navigatorBarColor;
     }
 
     /**
@@ -91,6 +113,14 @@ public class ZCBLRequireParamsModel implements Serializable{
         this.caseAddress = caseAddress;
     }
 
+    public String getNavigatorBarColor() {
+        return navigatorBarColor;
+    }
+
+    public void setNavigatorBarColor(String navigatorBarColor) {
+        this.navigatorBarColor = navigatorBarColor;
+    }
+
     @Override
     public String toString() {
         return "ZCBLRequireParamsModel{" +
@@ -99,6 +129,7 @@ public class ZCBLRequireParamsModel implements Serializable{
                 ", longitude='" + longitude + '\'' +
                 ", latitude='" + latitude + '\'' +
                 ", caseAddress='" + caseAddress + '\'' +
+                ", navigatorBarColor='" + navigatorBarColor + '\'' +
                 '}';
     }
 }

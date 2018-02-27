@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
                 surveyModel.setCaseAddress(caseAddress);
                 surveyModel.setLatitude("90.000");
                 surveyModel.setLongitude("125.000");
+                surveyModel.setNavigatorBarColor("#0d70d8");
                 ZCBLSDK.goToVideoSurvey(MainActivity.this, surveyModel);
                 //测试bug统计
 //                ZCBLCrashHandler.getInstance().init(MainActivity.this);

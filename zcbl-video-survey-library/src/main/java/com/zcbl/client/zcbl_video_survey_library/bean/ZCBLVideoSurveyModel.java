@@ -15,8 +15,21 @@ public class ZCBLVideoSurveyModel implements Serializable {
     private String videoRoomId;
     private String syncCommandNodePath;
     private String syncVideoConnectCommandNodePath;
+    private String navigatorBarColor ;
 
     public ZCBLVideoSurveyModel() {
+    }
+
+    public ZCBLVideoSurveyModel(String siSurveyNo, String phoneNum, String longitude, String latitude, String caseAddress, String videoRoomId, String syncCommandNodePath, String syncVideoConnectCommandNodePath, String navigatorBarColor) {
+        this.siSurveyNo = siSurveyNo;
+        this.phoneNum = phoneNum;
+        this.longitude = longitude;
+        this.latitude = latitude;
+        this.caseAddress = caseAddress;
+        this.videoRoomId = videoRoomId;
+        this.syncCommandNodePath = syncCommandNodePath;
+        this.syncVideoConnectCommandNodePath = syncVideoConnectCommandNodePath;
+        this.navigatorBarColor = navigatorBarColor;
     }
 
     public ZCBLVideoSurveyModel(String siSurveyNo,
@@ -103,6 +116,14 @@ public class ZCBLVideoSurveyModel implements Serializable {
         this.syncVideoConnectCommandNodePath = syncVideoConnectCommandNodePath;
     }
 
+    public String getNavigatorBarColor() {
+        return navigatorBarColor;
+    }
+
+    public void setNavigatorBarColor(String navigatorBarColor) {
+        this.navigatorBarColor = navigatorBarColor;
+    }
+
     @Override
     public String toString() {
         return "ZCBLVideoSurveyModel{" +
@@ -114,6 +135,7 @@ public class ZCBLVideoSurveyModel implements Serializable {
                 ", videoRoomId='" + videoRoomId + '\'' +
                 ", syncCommandNodePath='" + syncCommandNodePath + '\'' +
                 ", syncVideoConnectCommandNodePath='" + syncVideoConnectCommandNodePath + '\'' +
+                ", navigatorBarColor='" + navigatorBarColor + '\'' +
                 '}';
     }
 }
