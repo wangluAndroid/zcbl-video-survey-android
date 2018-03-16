@@ -11,10 +11,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,7 +62,7 @@ import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURV
  * 2.所有的断开只返回到进入界面
  */
 
-public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener {
+public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
 
     private WilddogVideoView wilddog_video_view;
 
@@ -83,6 +85,20 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private ImageView iv_switch_audio;
     private ZCBLHeadsetReceiver zcblHeadsetReceiver;
     private ZCBLBluetoothConnectionReceiver blueAudioNoisyReceiver;
+    private ImageView iv_layer;
+    private WilddogVideoView remote_video_view;
+    private boolean isRemoteAttach = false ;
+
+    private RelativeLayout rootView;
+    private int lastX ;
+    private int lastY ;
+    private int screenWidth  ;
+    private int screenHeight ;
+    private int left;
+    private int top;
+    private int right;
+    private int bottom;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -248,6 +264,23 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                     } else if ("WEB$$surveyIsOver".equals(type)) {
                         ZCBLVideoSurveyActivity.this.setResult(VIDEO_SURVEY_IS_OVER);
                         ZCBLVideoSurveyActivity.this.finish();
+                    } else if ("WEB$$takePic0".equals(type)) {
+                        //蒙版--45度角
+                        iv_layer.setImageResource(R.drawable.ic_layer_45);
+                        iv_layer.setVisibility(View.VISIBLE);
+                    } else if ("WEB$$takePic1".equals(type)) {
+                        //蒙版--车架号
+                        iv_layer.setImageResource(R.drawable.ic_layer_chejiahao);
+                        iv_layer.setVisibility(View.VISIBLE);
+                    } else if ("WEB$$takePic2".equals(type)) {
+                        //蒙版--驾驶证
+                        iv_layer.setImageResource(R.drawable.ic_layer_license);
+                        iv_layer.setVisibility(View.VISIBLE);
+                    }else if ("WEB$$openRemoteWindow".equals(type)) {
+                        remote_video_view.setVisibility(View.VISIBLE);
+                    } else if ("WEB$$closeRemoteWindow".equals(type)) {
+                        //控制远端视频流窗口关闭
+                        remote_video_view.setVisibility(View.GONE);
                     }
 
                 }
@@ -344,7 +377,16 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 //                holder.setId(roomStream.getStreamId());
 //                streamHolders.add(holder);
 //                handler.sendEmptyMessage(0);
-                roomStream.enableVideo(false);
+//                roomStream.enableVideo(false);
+                // 在控件中显示
+                if (!isRemoteAttach && null != roomStream) {
+                    isRemoteAttach = true ;
+                    try {
+                        roomStream.attach(remote_video_view);
+                    } catch (Exception e) {
+                        Log.e(ZCBLConstants.TAG, "onStreamReceived: ---Exception--->"+e.toString());
+                    }
+                }
             }
 
             @Override
@@ -402,7 +444,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         super.onDestroy();
 //        b1c0b8350beb488db3857661b14e4f57
         Log.w(ZCBLConstants.TAG,"-------------ZCBLVideoSurveyActivity----onDestory--------");
-        leaveRoom();
+//        leaveRoom();
         if (null != syncReference) {
             if (null != childEventListener) {
                 syncReference.removeEventListener(childEventListener);
@@ -414,10 +456,13 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
             localStream.detach();
             localStream.close();
         }
-       
+        isRemoteAttach = false;
         isLightOn = false;
         if (null != wilddog_video_view) {
             wilddog_video_view.release();
+        }
+        if (null != remote_video_view) {
+            remote_video_view.release();
         }
 
         if (null != zcblHeadsetReceiver) {
@@ -445,6 +490,14 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 //        iv_switch_audio.setOnClickListener(this);
 
         progressbar = (ProgressBar) findViewById(R.id.progressbar);
+
+        rootView = (RelativeLayout) findViewById(R.id.rootView);
+
+        iv_layer = (ImageView) findViewById(R.id.iv_layer);
+        iv_layer.setOnClickListener(this);
+
+        remote_video_view = (WilddogVideoView) findViewById(R.id.remote_video_view);
+        remote_video_view.setOnTouchListener(this);
     }
 
     @Override
@@ -493,6 +546,8 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 //                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开A2DP-------->"+audioManager.isBluetoothA2dpOn());
 //                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开SCO-------->"+audioManager.isBluetoothScoOn());
 //                break ;
+        } else if (id == R.id.iv_layer) {
+            iv_layer.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -576,5 +631,64 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         leaveRoom();
         setResult(VIDEO_SURVEY_IS_OVER);
         finish();
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        int x = (int) event.getRawX();
+        int y = (int) event.getRawY();
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                screenWidth = rootView.getWidth();
+                screenHeight = rootView.getHeight();
+                lastX = x ;
+                lastY = y ;
+                break ;
+            case MotionEvent.ACTION_MOVE:
+                int offsetX = x -lastX ;
+                int offsetY = y - lastY ;
+                left = remote_video_view.getLeft()+offsetX ;
+                top = remote_video_view.getTop()+offsetY ;
+                right = remote_video_view.getRight()+offsetX ;
+                bottom = remote_video_view.getBottom()+offsetY ;
+                if (left < 0) {
+                    left = 0 ;
+                    right = remote_video_view.getWidth();
+                }
+                if (top < 0) {
+                    top = 0 ;
+                    bottom = remote_video_view.getHeight();
+                }
+                if (right > screenWidth) {
+                    left = screenWidth - remote_video_view.getWidth() ;
+                    right = screenWidth;
+                }
+                if (bottom > screenHeight) {
+                    top = screenHeight - remote_video_view.getHeight();
+                    bottom = screenHeight;
+                }
+                remote_video_view.layout(left, top, right, bottom);
+                lastX = x ;
+                lastY = y ;
+                break ;
+            case MotionEvent.ACTION_UP:
+                lastX = x ;
+                lastY = y ;
+                //将最后拖拽的位置定下来，否则页面刷新渲染后按钮会自动回到初始位置
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) v.getLayoutParams();
+                /**
+                 * 将xml中设置的layout_alignParentBottom不起作用
+                 * 第一种方式：
+                 * lp.setMargins(left,top,0,0);
+                 * lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                 * 第二种方式：
+                 * lp.setMargins(left,top,screenWidth-right,screenHeight-bottom);
+                 */
+                lp.setMargins(left,top,screenWidth-right,screenHeight-bottom);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                v.setLayoutParams(lp);
+                break ;
+        }
+        return true;
     }
 }
