@@ -26,8 +26,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //final String phoneNum = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
-                final String siSurveyNo = "a61bf288f6124757b774bb7f41c1d170";
-                final String phoneNum = "18951735723";
+                final String siSurveyNo = "c7e801c9ebfd4760863dc1cc7807d329";
+                final String phoneNum = "18800001111";
                 final String caseAddress = "北京市天安门广场";
                 //此model为中车视频查勘实体类
                 ZCBLRequireParamsModel surveyModel = new ZCBLRequireParamsModel();
