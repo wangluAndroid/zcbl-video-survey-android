@@ -2,6 +2,12 @@ package com.zcbl.client.zcbl_video_survey_library;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
+
+import com.tencent.imsdk.TIMLogLevel;
+import com.tencent.imsdk.TIMManager;
+import com.tencent.imsdk.TIMSdkConfig;
+import com.tencent.rtmp.TXLiveBase;
 import com.wilddog.wilddogcore.WilddogApp;
 import com.wilddog.wilddogcore.WilddogOptions;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
@@ -17,7 +23,19 @@ import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
 
 public class ZCBLSDK {
 
+    private static Context instance;
+
     public static void init(Context context){
+        instance = context ;
+        TXLiveBase.setConsoleEnabled(BuildConfig.DEBUG);
+
+        //初始化SDK基本配置   1400066983
+        TIMSdkConfig config = new TIMSdkConfig(1400066983)
+                .setLogLevel(TIMLogLevel.DEBUG)
+                .enableLogPrint(BuildConfig.DEBUG)
+                .setLogPath(Environment.getExternalStorageDirectory().getPath() + "/justfortest/");
+        //初始化SDK
+        TIMManager.getInstance().init(context, config);
         // 初始化
         WilddogOptions syncOptions = new WilddogOptions.Builder().setSyncUrl("https://"+ NativeData.getAppId()+".wilddogio.com").build();
         WilddogApp.initializeApp(context, syncOptions);
@@ -30,6 +48,10 @@ public class ZCBLSDK {
             intent.putExtra("zcbl_model", model);
             context.startActivity(intent);
         }
+    }
+
+    public static Context getInstance() {
+        return instance ;
     }
 
     /**

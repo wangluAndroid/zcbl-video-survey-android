@@ -54,8 +54,15 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
-    compile ('com.zcbl.android:zcbl-video-survey-library:1.0.9'){
-        exclude group:"com.android.support",module:"appcompat-v7"
+//    compile ('com.zcbl.android:zcbl-video-survey-library:1.0.9'){
+//        exclude group:"com.android.support",module:"appcompat-v7"
+//    }
+    compile project(':zcbl-video-survey-library')
+}
+
+//如果library类型的module需要引入aar文件是，也需要在引入的项目的build.gradle文件中加入下面的这句话
+repositories{
+    flatDir {
+        dirs 'libs', '../zcbl-video-survey-library/libs'
     }
-//    compile project(':zcbl-video-survey-library')
 }
