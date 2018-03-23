@@ -25,15 +25,6 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.wilddog.client.ChildEventListener;
-import com.wilddog.client.DataSnapshot;
-import com.wilddog.client.SyncError;
-import com.wilddog.client.SyncReference;
-import com.wilddog.client.WilddogSync;
-import com.wilddog.wilddogauth.WilddogAuth;
-import com.wilddog.wilddogauth.core.Task;
-import com.wilddog.wilddogauth.core.listener.OnCompleteListener;
-import com.wilddog.wilddogauth.core.result.AuthResult;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
@@ -67,7 +58,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     private ZCBLPermissionHelper mHelper; // 权限检测器
     private boolean isRequireCheck = true; // 是否需要系统权限检测
 
-    private SyncReference ref;
 
     private ZCBLVideoSurveyModel zcblVideoSurveyModel;
     private String siSurveyNo ;
@@ -75,7 +65,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     private String syncVideoConnectCommandNodePath ;
     private String customerServicePhone;
 
-    private ChildEventListener childEventListener;
 
     private ZCBLCustomLoadingDialogManager loading_dialog;
     private CountDownTimer timer = new CountDownTimer(16*1000, 1000) {
@@ -104,7 +93,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             Log.e(TAG, "视频建立连接异常，无法正常连接，35sAPP端重置");
             if (1 == what) {
                 startCountdownAndDismissLoading();
-                removeSync();
                 ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
             }
         }
@@ -178,24 +166,11 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
 
     private void goToVideoroom(){
-        WilddogAuth auth = WilddogAuth.getInstance();
-        auth.signInAnonymously().addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(Task<AuthResult> var1) {
-                if (var1.isSuccessful()) {
-                    resumeStatus();
-                    dismissLoading();
-                    Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
-                    intent.putExtra("ZCBLVideoSurveyModel", (Serializable) zcblVideoSurveyModel);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
-                } else {
-                    startCountdownAndDismissLoading();
-                    ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this, "登录失败,请查看日志寻找失败原因");
-                    Log.e("error", var1.getException().getMessage());
-                }
-            }
-        });
+        dismissLoading();
+        Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
+        intent.putExtra("ZCBLVideoSurveyModel", (Serializable) zcblVideoSurveyModel);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
     }
 
 
@@ -282,7 +257,8 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
                                 zcblVideoSurveyModel.setVideoRoomId(videoRoomId);
                                 zcblVideoSurveyModel.setSyncCommandNodePath(syncCommandNodePath);
                                 zcblVideoSurveyModel.setSyncVideoConnectCommandNodePath(syncVideoConnectCommandNodePath);
-                                addWilddogListener();
+                                // TODO: 2018/3/22 进入tx视频房间
+//                                goToVideoroom();
                             }else{
                                 startCountdownAndDismissLoading();
                                 ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
@@ -312,60 +288,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     }
 
 
-
-    private void addWilddogListener() {
-        if (null != handler) {
-            handler.sendEmptyMessageDelayed(1, 35 * 1000);
-        }
-        Log.i(TAG, "syncVideoConnectCommandNodePath: "+syncVideoConnectCommandNodePath);
-        ref = WilddogSync.getInstance().getReference(syncVideoConnectCommandNodePath);
-        childEventListener = ref.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                String type = dataSnapshot.getValue().toString();
-                if (!TextUtils.isEmpty(type)) {
-                    if ("WEB$$goToConnection".equals(type) ) {
-                        if (null != handler) {
-                            handler.removeMessages(1);
-                        }
-                        removeSync();
-                        goToVideoroom();
-                        Log.i(ZCBLConstants.TAG,"----------goToConnection----1------->");
-                    } else if ("WEB$$refuseConnection".equals(type)) {
-                        if (null != handler) {
-                            handler.removeMessages(1);
-                        }
-                        startCountdownAndDismissLoading();
-                        removeSync();
-                        ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
-                        Log.i(ZCBLConstants.TAG,"-----------refuseConnection---------------");
-                    }
-                }
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(SyncError syncError) {
-
-            }
-        });
-    }
-
     /**
      * 启动倒计时 隐藏加载框
      */
@@ -376,17 +298,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         dismissLoading();
     }
 
-    /**
-     * 移除监听
-     */
-    public void removeSync() {
-        if (null != ref) {
-            if (null != childEventListener) {
-                ref.removeEventListener(childEventListener);
-            }
-            ref = null ;
-        }
-    }
 
 
     // 显示缺失权限提示

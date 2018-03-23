@@ -50,12 +50,6 @@
             android:theme="@style/WilddogTheme"
             />
 
-        <receiver android:name="com.wilddog.client.receiver.WilddogAuthCastReceiver">
-            <intent-filter>
-                <action android:name="com.wilddog.wilddogauth.signinsuccess"/>
-                <action android:name="com.wilddog.wilddogauth.signoutsuccess"/>
-            </intent-filter>
-        </receiver>
 
         <!--<receiver android:name=".ui.receiver.ZCBLHeadsetReceiver"-->
             <!--android:enabled="true"-->
@@ -69,13 +63,6 @@
             <!--android:exported="true"-->
             <!--android:enabled="true"-->
             <!--/>-->
-
-        <activity android:name=".ui.tx.TXVideoActivity"
-            android:screenOrientation="landscape"
-            android:launchMode="singleTop"
-            android:theme="@style/WilddogTheme"
-            />
-
 
 
         <!-- 【必须】消息收发service -->

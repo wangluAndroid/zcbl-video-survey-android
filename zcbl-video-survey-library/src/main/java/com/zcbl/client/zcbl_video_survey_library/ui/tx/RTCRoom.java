@@ -1,7 +1,7 @@
 package com.zcbl.client.zcbl_video_survey_library.ui.tx;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -11,6 +11,8 @@ import android.os.Looper;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
@@ -21,21 +23,29 @@ import com.tencent.imsdk.TIMManager;
 import com.tencent.imsdk.TIMMessage;
 import com.tencent.imsdk.TIMMessageListener;
 import com.tencent.imsdk.TIMTextElem;
+import com.tencent.rtmp.ITXLivePlayListener;
 import com.tencent.rtmp.ITXLivePushListener;
 import com.tencent.rtmp.TXLiveConstants;
+import com.tencent.rtmp.TXLivePlayer;
 import com.tencent.rtmp.TXLivePushConfig;
 import com.tencent.rtmp.TXLivePusher;
 import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.PlayerItem;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.PusherInfo;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.RoomManager;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.RoomState;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.SelfAccountInfo;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpRequests;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpResponse;
+import com.zcbl.client.zcbl_video_survey_library.utils.DateUtils;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 
 /**
  * Created by serenitynanian on 2018/3/20.
@@ -50,17 +60,15 @@ public class RTCRoom{
     private int mWhiteningLevel = 5;
     private int mRuddyLevel = 5;
 
+    private IReceiveIMListener mIReceiveIMListener;
+
     public static int RTCROOM_VIDEO_RATIO_9_16    = 1; //视频分辨率为9:16
     public static int RTCROOM_VIDEO_RATIO_3_4     = 2; //视频分辨率为3:4
     public static int RTCROOM_VIDEO_RATIO_1_1     = 3; //视频分辨率为1:1
 
 
     private RoomManager mRoomManager = new RoomManager();
-
-
-    private boolean enableOneKeyBeauty = true;
-
-    private RTCDoubleRoomActivityInterface myInterface;
+    private HashMap<String, PlayerItem> mPlayers     = new LinkedHashMap<>();
 
 
     private Handler mHandler;
@@ -69,6 +77,10 @@ public class RTCRoom{
     private TXLivePushListenerImpl mTXLivePushListener;
 
     private RoomListenerCallback        roomListenerCallback;
+    private TXCloudVideoView remoteView;
+    private InitCallback initCallback;
+    private SelfAccountInfo selfAccountInfo;
+    private String siSurveyNum ;
 
     /**
      * RTCRoom 初始化Callback
@@ -80,7 +92,7 @@ public class RTCRoom{
 
     public RTCRoom(Context context) {
         mContext = context;
-        myInterface = (RTCDoubleRoomActivityInterface) context;
+        mIReceiveIMListener = (IReceiveIMListener) context;
         mHandler = new Handler(Looper.getMainLooper());
         roomListenerCallback = new RoomListenerCallback(null);
         mHttpRequest = new HttpRequests("https://jiw5ccnh.qcloud.la/weapp/double_room");
@@ -88,27 +100,33 @@ public class RTCRoom{
     }
 
 
-    public void init(String domain, SelfAccountInfo selfAccountInfo, TXCloudVideoView rtmproom_video_local, final InitCallback initCallback) {
-
+    public void init(String siSurveyNum, SelfAccountInfo selfAccountInfo, final InitCallback initCallback) {
+        this.initCallback = initCallback;
+        this.selfAccountInfo = selfAccountInfo ;
+        this.siSurveyNum = siSurveyNum ;//查勘号
         final String selfUserID   = selfAccountInfo.userID;
-        final String selfUserName = selfAccountInfo.userName;
         final String selfUserSig  = selfAccountInfo.userSig;
+
+        final String selfUserName = selfAccountInfo.userName;
         final String selfHeadPic  = selfAccountInfo.userAvatar;
         final int selfAppID       = selfAccountInfo.sdkAppID;
-
 
         mRoomManager.setState(RoomState.Absent);
         mRoomManager.setSelfUserID(selfUserID);
         mRoomManager.setSelfUserName(selfUserName);
         mRoomManager.setAvatarUrl(selfHeadPic);
+        mRoomManager.setRoomName("Android");
 
-//        initCallback.onSuccess(selfUserID);
+        //设置IM消息监听
+        setIM_newMessageListener();
+        //IM登录请求
+        imLogin(initCallback, selfUserID,selfUserSig);
+    }
 
-        //IM 初始化成功后 开始设置camera影像到界面上
-        //展示本地流到手机界面TXCloudVideoView上
-        showLocalStreamToView(rtmproom_video_local);
-
-
+    /**
+     * 设置IM消息监听
+     */
+    private void setIM_newMessageListener() {
         //设置消息监听
         TIMManager.getInstance().addMessageListener(new TIMMessageListener() {
             @Override
@@ -122,12 +140,11 @@ public class RTCRoom{
                     Log.d(ZCBLConstants.TAG, "elem type: " + elemType.name());
                     if (elemType == TIMElemType.Text) {
                         //处理文本消息
-                        Log.e(ZCBLConstants.TAG, "onNewMessages:---sender "+msg.getSender() );
-
                         String text = ((TIMTextElem) elem).getText();
-
-
-                        Log.e(ZCBLConstants.TAG, "onNewMessages:---sender "+text );
+                        Log.e(ZCBLConstants.TAG, "onNewMessages:--date->"+ DateUtils.convertLongToyyyyMMddHHmmss(msg.timestamp())+"---sender--> "+msg.getSender()+"----消息内容--->"+text);
+                        if (!TextUtils.isEmpty(text)) {
+                            mIReceiveIMListener.receiveIMMessage(text);
+                        }
 
                     } else if (elemType == TIMElemType.Image) {
                         //处理图片消息
@@ -135,10 +152,16 @@ public class RTCRoom{
                 return true; //返回true将终止回调链，不再调用下一个新消息监听器
             }
         });
+    }
 
-        String ss = "eJxtjUFPgzAAhf9LrxpXWmDUZIcxFoKxGizC3KXBtUCDZQ10Ccb434cTs4vX9733vi*QPbK70hgleGk57gW4B44LIfR9EmBw*8sPh*Ops9x*GjlxhDD2Z6SE7KyqlOwncBpkzx0POR72IcEBdLmLl3NzEC2-iP4zWKV-nq-bOZejUb3kZWUvAuQRNC3-HlU9ZXT7uknSaFEUWVaMdRO96COFTIldm*gur94bty0Ni5p6E261GvbrpN6HNI2fZcwequBm-eEkaUjI6DFE88XbDkkt0XLMoYyf6Ap8nwFoHlXL";
+    /**
+     * IM登录
+     * @param initCallback
+     * @param selfUserID
+     */
+    private void imLogin(final InitCallback initCallback, final String selfUserID,final String selfUserSig ) {
         // identifier为用户名，userSig 为用户登录凭证
-        TIMManager.getInstance().login("user_1521536093804_437", ss, new TIMCallBack() {
+        TIMManager.getInstance().login(selfUserID, selfUserSig, new TIMCallBack() {
             @Override
             public void onError(int code, String desc) {
                 //错误码code和错误描述desc，可用于定位请求失败原因
@@ -152,28 +175,41 @@ public class RTCRoom{
                 Log.e(ZCBLConstants.TAG, "login succ");
                 initCallback.onSuccess(selfUserID);
 
-                createRoom("888", new CreateRoomCallback() {
-                    @Override
-                    public void onError(int errCode, String errInfo) {
-                        Log.e(ZCBLConstants.TAG, "onError:----创建房间失败 ");
-                    }
-
-                    @Override
-                    public void onSuccess(String roomId) {
-                        Log.e(ZCBLConstants.TAG, "onSuccess:----创建房间成功---roomId---->"+roomId);
-                    }
-                });
+                createRoom(selfUserID);
             }
         });
+    }
 
+    /**
+     * 创建房间
+     * @param selfUserID
+     */
+    private void createRoom(String selfUserID) {
+        createRoom(selfUserID, new CreateRoomCallback() {
+            @Override
+            public void onError(int errCode, String errInfo) {
+                Log.e(ZCBLConstants.TAG, "[RTCRoom]---createRoom----onError:----errCode---> "+errCode+"--------errorInfo--->"+errInfo);
+            }
 
+            @Override
+            public void onSuccess(String roomId) {
+                Log.e(ZCBLConstants.TAG, "[RTCRoom]---createRoom---onSuccess:----创建房间成功---roomId---->"+roomId);
+            }
+        });
+    }
+
+    /**
+     * 拿到远端流
+     */
+    private void getRemoteStream() {
+        mRoomManager.updatePushers(mHttpRequest,roomListenerCallback);
     }
 
     /**
      * 展示本地流到手机界面TXCloudVideoView上
      * @param rtmproom_video_local
      */
-    private void showLocalStreamToView(TXCloudVideoView rtmproom_video_local) {
+    public void showLocalStreamToView(TXCloudVideoView rtmproom_video_local) {
         startLocalPreview(rtmproom_video_local);
         setPauseImage(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.pause_publish));
         setBitrateRange(400, 800);
@@ -181,6 +217,8 @@ public class RTCRoom{
         setHDAudio(true);
         setBeautyFilter(mBeautyStyle, mBeautyLevel, mWhiteningLevel, mRuddyLevel);
     }
+
+
 
     /**
      * RTCRoom 创建房间Callback
@@ -312,7 +350,6 @@ public class RTCRoom{
         roomListenerCallback.setRoomMemberEventListener(listener);
     }
 
-
     /**
      * 反初始化
      */
@@ -321,6 +358,69 @@ public class RTCRoom{
         mContext = null;
         mHandler = null;
 
+    }
+
+    /**
+     * 设置展示远端流view
+     * @param remoteView
+     */
+    public void setRemoteView(TXCloudVideoView remoteView){
+        this.remoteView = remoteView ;
+    }
+
+    /**
+     * 展示远端流
+     * flvUrl  远端流的URL
+     */
+    public void showRemoteStream(final @NonNull PusherInfo pusherInfo) {
+
+        synchronized (this) {
+
+            if (mPlayers.containsKey(pusherInfo.userID)){
+                PlayerItem pusherPlayer = mPlayers.get(pusherInfo.userID);
+                if (pusherPlayer.player.isPlaying()){
+                    return;
+                }else {
+                    pusherPlayer = mPlayers.remove(pusherInfo.userID);
+                    pusherPlayer.destroy();
+                }
+            }
+
+            final TXLivePlayer player = new TXLivePlayer(mContext);
+
+            remoteView.setVisibility(View.VISIBLE);
+            player.setPlayerView(remoteView);
+            player.enableHardwareDecode(true);
+
+            PlayerItem pusherPlayer = new PlayerItem(remoteView, pusherInfo, player);
+            mPlayers.put(pusherInfo.userID, pusherPlayer);
+
+            player.setPlayListener(new ITXLivePlayListener() {
+                @Override
+                public void onPlayEvent(int event, Bundle param) {
+                    if (event == TXLiveConstants.PLAY_EVT_PLAY_END || event == TXLiveConstants.PLAY_ERR_NET_DISCONNECT){
+                        if (mPlayers.containsKey(pusherInfo.userID)) {
+                            PlayerItem item = mPlayers.remove(pusherInfo.userID);
+                            if (item != null) {
+                                item.destroy();
+                            }
+                        }
+                        // 刷新下pushers
+                    }
+                }
+
+                @Override
+                public void onNetStatus(Bundle status) {
+
+                }
+            });
+
+            int result = player.startPlay(pusherInfo.accelerateURL, TXLivePlayer.PLAY_TYPE_LIVE_RTMP);
+            if (result != 0){
+                roomListenerCallback.onDebugLog(String.format("[RTCRoom] 播放成员 {%s} 地址 {%s} 失败",
+                        pusherInfo.userID, pusherInfo.accelerateURL));
+            }
+        }
     }
 
 
@@ -347,6 +447,7 @@ public class RTCRoom{
                     @Override
                     public void run() {
                         roomMemberEventListener.onPusherJoin(member);
+                        showRemoteStream(member);
                     }
                 });
             }
@@ -432,23 +533,23 @@ public class RTCRoom{
      */
     public synchronized void startLocalPreview(final @NonNull TXCloudVideoView videoView) {
         roomListenerCallback.onDebugLog("[RTCRoom] startLocalPreview");
-
         initLivePusher();
-
         if (mTXLivePusher != null) {
             //将界面元素和pusher对象关联起来，从而能够将手机摄像头采集到的画面渲染到手机屏幕上
-            ((Activity)mContext).runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    videoView.setVisibility(View.VISIBLE);
-                    mTXLivePusher.startCameraPreview(videoView);
-
-                }
-            });
+            videoView.setVisibility(View.VISIBLE);
+            mTXLivePusher.startCameraPreview(videoView);
         }
     }
 
-
+    private void unInitLivePusher() {
+        if (mTXLivePusher != null) {
+            mTXLivePushListener = null;
+            mTXLivePusher.setPushListener(null);
+            mTXLivePusher.stopCameraPreview(true);
+            mTXLivePusher.stopPusher();
+            mTXLivePusher = null;
+        }
+    }
 
     /**
      * 初始化TXLivePusher
@@ -462,7 +563,8 @@ public class RTCRoom{
             config.setHomeOrientation(TXLiveConstants.VIDEO_ANGLE_HOME_RIGHT);
             mTXLivePusher = new TXLivePusher(this.mContext);
             mTXLivePusher.setConfig(config);
-            mTXLivePusher.setBeautyFilter(TXLiveConstants.BEAUTY_STYLE_SMOOTH, 5, 3, 2);
+            //关闭美颜
+            mTXLivePusher.setBeautyFilter(TXLiveConstants.BEAUTY_STYLE_SMOOTH, 0, 0, 0);
             mTXLivePusher.setVideoQuality(TXLiveConstants.VIDEO_QUALITY_REALTIEM_VIDEOCHAT, true, true);
 
             mTXLivePushListener = new TXLivePushListenerImpl();
@@ -657,6 +759,98 @@ public class RTCRoom{
         }
     }
 
+    /**
+     * 停止摄像头预览
+     */
+    public synchronized void stopLocalPreview() {
+        if (mTXLivePusher != null) {
+            mTXLivePusher.setPushListener(null);
+            mTXLivePusher.stopCameraPreview(true);
+            mTXLivePusher.stopPusher();
+        }
+
+        unInitLivePusher();
+    }
+
+    /**
+     * 切换摄像头
+     */
+    public void switchCamera() {
+        if (mTXLivePusher != null) {
+            mTXLivePusher.switchCamera();
+        }
+    }
+
+
+    /**
+     * RTCRoom 离开房间Callback
+     */
+    public interface ExitRoomCallback{
+        void onError(int errCode, String errInfo);
+        void onSuccess();
+    }
+
+    /**
+     * 离开房间
+     * @param callback 离开房间完成的回调
+     */
+    public void exitRoom(final ExitRoomCallback callback) {
+
+        //1. 应用层结束播放所有的流
+
+        //2. 结束心跳
+        mHeartBeatThread.stopHeartbeat();
+
+        //3. 结束本地推流
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stopLocalPreview();
+            }
+        });
+
+        //4. 关闭所有播放器，清理房间信息
+        for (Map.Entry<String, PlayerItem> entry : mPlayers.entrySet()) {
+            entry.getValue().destroy();
+        }
+        mPlayers.clear();
+
+        //5. 调用IM的quitGroup
+        TIMManager.getInstance().logout(new TIMCallBack() {
+            @Override
+            public void onError(int code, String desc) {
+
+                //错误码code和错误描述desc，可用于定位请求失败原因
+                //错误码code列表请参见错误码表
+                Log.d(ZCBLConstants.TAG, "logout failed. code: " + code + " errmsg: " + desc);
+            }
+
+            @Override
+            public void onSuccess() {
+                //登出成功
+            }
+        });
+
+        //6. 退出房间：请求CGI:delete_pusher，把自己从房间成员列表里删除（后台会判断如果是房间创建者退出房间，则会直接解散房间）
+        mHttpRequest.delPusher(mRoomManager.getRoomId(), mRoomManager.getSelfUserID(), new HttpRequests.OnResponseCallback<HttpResponse>() {
+            @Override
+            public void onResponse(int retcode, @Nullable String retmsg, @Nullable HttpResponse data) {
+                if (retcode == HttpResponse.CODE_OK || retcode == 5) {
+                    mRoomManager.setState(RoomState.Empty);
+                    roomListenerCallback.printLog("[RTCRoom] UserID{%s} 退出房间 {%s}  成功", mRoomManager.getSelfUserID(), mRoomManager.getRoomId());
+                    callback.onSuccess();
+                }
+                else {
+                    roomListenerCallback.printLog("[RTCRoom] UserID{%s} 退出房间 {%s}  失败", mRoomManager.getSelfUserID(), mRoomManager.getRoomId());
+                    callback.onError(retcode, retmsg);
+                }
+            }
+        });
+
+        //清理roomManager
+        mRoomManager.clean();
+    }
+
 
 
     private interface PusherStreamCallback {
@@ -751,6 +945,31 @@ public class RTCRoom{
             stopHeartbeat = true;
             handler.removeCallbacks(heartBeatRunnable);
         }
+    }
+
+
+    public TXLivePusher getLivePusher(){
+        return mTXLivePusher;
+    }
+
+
+    public void retryReqeust() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
+                .setTitle("")
+                .setMessage("初始化IM消息失败，请重试")
+//                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//
+//                    }
+//                })
+                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        imLogin(initCallback,selfAccountInfo.userID,selfAccountInfo.userSig);
+                    }
+                });
+        builder.show();
     }
 
 }

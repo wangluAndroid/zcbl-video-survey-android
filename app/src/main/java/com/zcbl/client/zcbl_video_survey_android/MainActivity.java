@@ -8,7 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.TXVideoActivity;
+import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyActivity;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLPermissionHelper;
 
 
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 //                String str = null ;
 //                System.out.println(str.toString());
 
-                startActivity(new Intent(MainActivity.this, TXVideoActivity.class));
+                startActivity(new Intent(MainActivity.this, ZCBLVideoSurveyActivity.class));
             }
         });
     }

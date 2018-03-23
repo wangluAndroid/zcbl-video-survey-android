@@ -1,10 +1,9 @@
 package com.zcbl.client.zcbl_video_survey_library.ui.activity;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -20,38 +19,37 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.wilddog.client.ChildEventListener;
-import com.wilddog.client.DataSnapshot;
-import com.wilddog.client.SyncError;
-import com.wilddog.client.SyncReference;
-import com.wilddog.client.WilddogSync;
-import com.wilddog.video.base.LocalStream;
-import com.wilddog.video.base.LocalStreamOptions;
-import com.wilddog.video.base.WilddogVideoError;
-import com.wilddog.video.base.WilddogVideoInitializer;
-import com.wilddog.video.base.WilddogVideoView;
-import com.wilddog.video.base.util.LogUtil;
-import com.wilddog.video.base.util.logging.Logger;
-import com.wilddog.video.room.CompleteListener;
-import com.wilddog.video.room.RoomStream;
-import com.wilddog.video.room.WilddogRoom;
-import com.wilddog.wilddogauth.WilddogAuth;
-import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.tencent.rtmp.TXLivePusher;
+import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.zcbl.client.zcbl_video_survey_library.R;
+import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 import com.zcbl.client.zcbl_video_survey_library.service.UpdateCallbackInterface;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLBluetoothConnectionReceiver;
 import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLHeadsetReceiver;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.IReceiveIMListener;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.Impl_IRTCRoomListener;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.RTCRoom;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.LoginInfoResponse;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.SelfAccountInfo;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLBase64Utils;
-import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
-
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURVEY_IS_OVER;
 
@@ -62,23 +60,20 @@ import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURV
  * 2.所有的断开只返回到进入界面
  */
 
-public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
+public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener,IReceiveIMListener {
+    public final static String DOMAIN = "https://jiw5ccnh.qcloud.la/weapp/double_room";   //测试环境 https://drourwkp.qcloud.la
+    private String userName = "王雨露";
+    private String avatarUrl = "avatar";
 
-    private WilddogVideoView wilddog_video_view;
-
-    private LocalStream localStream;
+    public final Handler uiHandler = new Handler();
     private boolean isAudioEnable = true;
     private boolean isVideoEnable = true;
-    private WilddogVideoInitializer initializer;
-    private WilddogRoom room;
     private TextView iv_goback;
     private ImageView iv_light;
     private ImageView iv_switch_camera;
     private ImageView iv_takepic;
     private ProgressBar progressbar;
     private boolean canTakePic = true ;
-    private SyncReference syncReference;
-    private ChildEventListener childEventListener;
     private ZCBLVideoSurveyModel zcblVideoSurveyModel;
 
     private boolean isLightOn = false ;
@@ -86,7 +81,6 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private ZCBLHeadsetReceiver zcblHeadsetReceiver;
     private ZCBLBluetoothConnectionReceiver blueAudioNoisyReceiver;
     private ImageView iv_layer;
-    private WilddogVideoView remote_video_view;
     private boolean isRemoteAttach = false ;
 
     private RelativeLayout rootView;
@@ -99,6 +93,10 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private int right;
     private int bottom;
 
+    private TXCloudVideoView remote_video_view ;
+    private TXCloudVideoView local_video_view;
+    private RTCRoom rtcRoom;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -108,10 +106,54 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         zcblVideoSurveyModel = (ZCBLVideoSurveyModel) getIntent().getSerializableExtra("ZCBLVideoSurveyModel");
         registerBroadcast();
         initView();
-        initRoomSDK();
-        createLocalStream();
-        joinRoom();
-        initSync();
+        initRTCRoom();
+        getImLoginInfo();
+
+        Log.e(ZCBLConstants.TAG, "onCreate: "+Thread.currentThread());
+    }
+
+    @Override
+    public void receiveIMMessage(String type) {
+        if ("WEB$$takePic".equals(type)) {
+            remoteTakePic();
+        } else if ("WEB$$openLight".equals(type)) {
+            controlCameraLight();
+        } else if ("WEB$$closeLight".equals(type)) {
+            controlCameraLight();
+        } else if ("WEB$$surveyIsOver".equals(type)) {
+            ZCBLVideoSurveyActivity.this.setResult(VIDEO_SURVEY_IS_OVER);
+            ZCBLVideoSurveyActivity.this.finish();
+        } else if ("WEB$$takePic0".equals(type)) {
+            //蒙版--45度角
+            iv_layer.setImageResource(R.drawable.ic_layer_45);
+            iv_layer.setVisibility(View.VISIBLE);
+        } else if ("WEB$$takePic1".equals(type)) {
+            //蒙版--车架号
+            iv_layer.setImageResource(R.drawable.ic_layer_chejiahao);
+            iv_layer.setVisibility(View.VISIBLE);
+        } else if ("WEB$$takePic2".equals(type)) {
+            //蒙版--驾驶证
+            iv_layer.setImageResource(R.drawable.ic_layer_license);
+            iv_layer.setVisibility(View.VISIBLE);
+        } else if ("WEB$$openRemoteWindow".equals(type)) {
+            remote_video_view.setVisibility(View.VISIBLE);
+        } else if ("WEB$$closeRemoteWindow".equals(type)) {
+            remote_video_view.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void remoteTakePic() {
+        TXLivePusher livePusher = rtcRoom.getLivePusher();
+        if (null != livePusher) {
+            livePusher.snapshot(new TXLivePusher.ITXSnapshotListener() {
+                @Override
+                public void onSnapshot(Bitmap bitmap) {
+                    if (null != bitmap) {
+                        uploadImage(bitmap);
+                    }
+                }
+            });
+        }
     }
 
     private void registerBroadcast() {
@@ -168,9 +210,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                                 progressbar.setVisibility(View.GONE);
                                 canTakePic = true ;
                                 String tempStr = "APP$$PHOTO$$ERROR";
-                                if (null != syncReference) {
-                                    syncReference.push().setValue(tempStr);
-                                }
+                                //// TODO: 2018/3/22 给web坐席发送消息 告知消息发送失败
                                 Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
                             }
                         });
@@ -202,9 +242,8 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                                             .append("&")
                                             .append(lat);
                                     Log.i(ZCBLConstants.TAG,"-------------upload--string---->"+sb.toString());
-                                    if (null != syncReference) {
-                                        syncReference.push().setValue(sb.toString());
-                                    }
+                                    //// TODO: 2018/3/22 通知坐席拍照成功 通过im告知坐席上传的图片信息
+
                                     Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片成功",Toast.LENGTH_SHORT).show();
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -231,239 +270,105 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         }
     }
 
-    private void initSync() {
-        syncReference = WilddogSync.getInstance().getReference(zcblVideoSurveyModel.getSyncCommandNodePath());
-        childEventListener = syncReference.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                String type = dataSnapshot.getValue().toString();
-                if (!TextUtils.isEmpty(type)) {
-                    if ("WEB$$takePic".equals(type)) {
-                        localStream.capturePicture(new LocalStream.CaptureListener() {
-                            @Override
-                            public void onCaptureCompleted(final Bitmap bitmap) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        uploadImage(bitmap);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onError(WilddogVideoError wilddogVideoError) {
-                                Log.e(ZCBLConstants.TAG, "onError: 拍照---->"+wilddogVideoError.getMessage() );
-                            }
-                        },false);
-                    } else if ("WEB$$openLight".equals(type)) {
-                        controlCameraLight();
-//                        Toast.makeText(ZCBLVideoSurveyActivity.this, "开启闪光灯", Toast.LENGTH_LONG).show();
-                    } else if ("WEB$$closeLight".equals(type)) {
-                        controlCameraLight();
-//                        Toast.makeText(ZCBLVideoSurveyActivity.this, "关闭闪光灯", Toast.LENGTH_LONG).show();
-                    } else if ("WEB$$surveyIsOver".equals(type)) {
-                        ZCBLVideoSurveyActivity.this.setResult(VIDEO_SURVEY_IS_OVER);
-                        ZCBLVideoSurveyActivity.this.finish();
-                    } else if ("WEB$$takePic0".equals(type)) {
-                        //蒙版--45度角
-                        iv_layer.setImageResource(R.drawable.ic_layer_45);
-                        iv_layer.setVisibility(View.VISIBLE);
-                    } else if ("WEB$$takePic1".equals(type)) {
-                        //蒙版--车架号
-                        iv_layer.setImageResource(R.drawable.ic_layer_chejiahao);
-                        iv_layer.setVisibility(View.VISIBLE);
-                    } else if ("WEB$$takePic2".equals(type)) {
-                        //蒙版--驾驶证
-                        iv_layer.setImageResource(R.drawable.ic_layer_license);
-                        iv_layer.setVisibility(View.VISIBLE);
-                    }else if ("WEB$$openRemoteWindow".equals(type)) {
-                        remote_video_view.setVisibility(View.VISIBLE);
-                    } else if ("WEB$$closeRemoteWindow".equals(type)) {
-                        //控制远端视频流窗口关闭
-                        remote_video_view.setVisibility(View.GONE);
-                    }
-
-                }
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(SyncError syncError) {
-
-            }
-        });
-    }
-
-    private void joinRoom() {
-        room = new WilddogRoom(zcblVideoSurveyModel.getVideoRoomId(), new WilddogRoom.Listener() {
-            @Override
-            public void onConnected(WilddogRoom wilddogRoom) {
-                room.publish(localStream, new CompleteListener() {
-                    //调用成功 videoError 对象为 null，否则通过 videoError 对象传递错误信息。
-                    @Override
-                    public void onComplete(final WilddogVideoError wilddogVideoError) {
-                        if (wilddogVideoError != null) {
-                            //失败
-                            Log.e("error", "error:" + wilddogVideoError.getMessage());
-                            Toast.makeText(ZCBLVideoSurveyActivity.this, "推送流失败", Toast.LENGTH_SHORT).show();
-                        } else {
-//                            Toast.makeText(ZCBLVideoSurveyActivity.this, "推送流成功", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onDisconnected(WilddogRoom wilddogRoom) {
-//                Toast.makeText(ZCBLVideoSurveyActivity.this, "服务器连接断开", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-
-            /**
-             * Room 中有远端媒体流加入。回调中的 RoomStream 对象只包含描述流的基本信息，不包含媒体数据，需要调用 subscribe() 方法获取媒体数据。
-             * @param wilddogRoom
-             * @param roomStream
-             */
-            @Override
-            public void onStreamAdded(WilddogRoom wilddogRoom, RoomStream roomStream) {
-//                Log.e(ZCBLConstants.TAG, "--------------onStreamAdded------------->"+roomStream.getStreamId());
-                room.subscribe(roomStream, new CompleteListener() {
-                    @Override
-                    public void onComplete(WilddogVideoError wilddogVideoError) {
-                    }
-                });
-            }
-
-            //Room 中有远端媒体流停止发布。
-            @Override
-            public void onStreamRemoved(WilddogRoom wilddogRoom, RoomStream roomStream) {
-                if(null==roomStream) {
-                    return;
-                }
-                room.unsubscribe(roomStream, new CompleteListener() {
-                    @Override
-                    public void onComplete(WilddogVideoError wilddogVideoError) {
-                        setResult(VIDEO_SURVEY_IS_OVER);
-                        finish();
-                    }
-                });
-
-            }
-
-            /**
-             * 注意：在这个地方来渲染video到视图上
-             * @param wilddogRoom
-             * @param roomStream
-             */
-            //收到远端媒体流数据。调用 RoomStream.attach() 方法在 WilddogVideoView 中预览媒体流。
-            @Override
-            public void onStreamReceived(WilddogRoom wilddogRoom, RoomStream roomStream) {
-                // 在控件中显示
-//                StreamHolder holder = new StreamHolder(false, System.currentTimeMillis(), roomStream);
-//                holder.setId(roomStream.getStreamId());
-//                streamHolders.add(holder);
-//                handler.sendEmptyMessage(0);
-//                roomStream.enableVideo(false);
-                // 在控件中显示
-                if (!isRemoteAttach && null != roomStream) {
-                    isRemoteAttach = true ;
-                    try {
-                        roomStream.attach(remote_video_view);
-                    } catch (Exception e) {
-                        Log.e(ZCBLConstants.TAG, "onStreamReceived: ---Exception--->"+e.toString());
-                    }
-                }
-            }
-
-            @Override
-            public void onStreamChanged(WilddogRoom wilddogRoom, RoomStream roomStream) {
-                // 混流使用
-            }
-
-            @Override
-            public void onError(WilddogRoom wilddogRoom, final WilddogVideoError wilddogVideoError) {
-                Toast.makeText(ZCBLVideoSurveyActivity.this, "发生错误,请产看日志", Toast.LENGTH_SHORT).show();
-                Log.e("error", "错误码:" + wilddogVideoError.getErrCode() + ",错误信息:" + wilddogVideoError.getMessage());
-                setResult(VIDEO_SURVEY_IS_OVER);
-                finish();
-            }
-        });
-        //加入 Room。成功加入 Room 会触发本地 onConnected 事件，否则触发 onError()) 事件。
-        room.connect();
-    }
-
-    private void initRoomSDK() {
-        LogUtil.setLogLevel(Logger.Level.DEBUG);
-        WilddogVideoInitializer.initialize(ZCBLVideoSurveyActivity.this, NativeData.getVideoKey(), WilddogAuth.getInstance().getCurrentUser().getToken(false).getResult().getToken());
-        initializer = WilddogVideoInitializer.getInstance();
-    }
-
-    private void createLocalStream() {
-        LocalStreamOptions options = new LocalStreamOptions
-                .Builder()
-//                .maxBitrateBps(491520)
-//                .minBitrateBps(245760)
-//                .dimension(LocalStreamOptions.Dimension.DIMENSION_1080P)
-                .dimension(LocalStreamOptions.Dimension.DIMENSION_MAX)
-                .defaultCameraSource(LocalStreamOptions.CameraSource.BACK_CAMERA)
+    private void getImLoginInfo() {
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
-        localStream = LocalStream.create(options);
-        localStream.enableAudio(isAudioEnable);
-        localStream.enableVideo(isVideoEnable);
-//        localStream.setFlashMode(LocalStream.FlashMode.FLASH_MODE_TORCH);
-//        localStream.switchCamera();
-//        //将本地媒体流绑定到WilddogVideoView中
-        localStream.attach(wilddog_video_view);
 
+        final MediaType MEDIA_JSON = MediaType.parse("application/json; charset=utf-8");
 
+        final Request request = new Request.Builder()
+                .url(DOMAIN.concat("/get_im_login_info"))//合并多个数组；合并多个字符串
+                .post(RequestBody.create(MEDIA_JSON, "{\"userIDPrefix\":\"android\"}"))
+                .build();
+
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, final IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.w(ZCBLConstants.TAG,"获取登录信息失败，点击重试");
+                        //失败后点击Title可以重试
+                        //// TODO: 2018/3/22  登录失败之后的处理流程
+                        retrygetLoginInfo();
+                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败{%s}", e.getMessage()));
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(final Call call, okhttp3.Response response) throws IOException {
+                String body = response.body().string();
+                Gson gson = new Gson();
+                try {
+                    LoginInfoResponse resp = gson.fromJson(body, LoginInfoResponse.class);
+                    if (resp.code != 0){
+                        Log.w(ZCBLConstants.TAG,"获取登录信息失败，点击重试");
+                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败：{%s}", resp.message));
+                    }else {
+                        final SelfAccountInfo selfAccountInfo = new SelfAccountInfo(
+                                resp.userID,
+                                userName,
+                                avatarUrl,
+                                resp.userSig,
+                                resp.accType,
+                                resp.sdkAppID);
+                        Log.w(ZCBLConstants.TAG, "onResponse: "+selfAccountInfo.toString());
+
+                        doLoginImInit(selfAccountInfo);
+
+                    }
+                } catch (JsonSyntaxException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    /**
+     * 进行im登录
+     * @param selfAccountInfo
+     */
+    private void doLoginImInit(SelfAccountInfo selfAccountInfo) {
+        rtcRoom.init(DOMAIN,selfAccountInfo, new RTCRoom.InitCallback() {
+            @Override
+            public void onError(int errCode, String errInfo) {
+
+            }
+
+            @Override
+            public void onSuccess(String userId) {
+                //IM初始化成功
+
+            }
+        });
+
+    }
+
+    private void initRTCRoom() {
+        //初始化RCTRoom
+        rtcRoom = new RTCRoom(this);
+        rtcRoom.setRTCRoomListener(new Impl_IRTCRoomListener());
+        rtcRoom.showLocalStreamToView(local_video_view);
+        rtcRoom.setRemoteView(remote_video_view);
     }
 
     private void leaveRoom() {
-        if (room != null) {
-            room.disconnect();
-            room = null;
-        }
+        rtcRoom.exitRoom(null);
+        setResult(VIDEO_SURVEY_IS_OVER);
+        finish();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        b1c0b8350beb488db3857661b14e4f57
         Log.w(ZCBLConstants.TAG,"-------------ZCBLVideoSurveyActivity----onDestory--------");
-//        leaveRoom();
-        if (null != syncReference) {
-            if (null != childEventListener) {
-                syncReference.removeEventListener(childEventListener);
-            }
-            syncReference = null ;
-        }
 
-        if (null!=localStream&&!localStream.isClosed()) {
-            localStream.detach();
-            localStream.close();
-        }
         isRemoteAttach = false;
         isLightOn = false;
-        if (null != wilddog_video_view) {
-            wilddog_video_view.release();
-        }
-        if (null != remote_video_view) {
-            remote_video_view.release();
-        }
 
         if (null != zcblHeadsetReceiver) {
             unregisterReceiver(zcblHeadsetReceiver);
@@ -472,11 +377,15 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         if (null != blueAudioNoisyReceiver) {
             unregisterReceiver(blueAudioNoisyReceiver);
         }
+
+        if (null != rtcRoom) {
+            rtcRoom.setRTCRoomListener(null);
+            rtcRoom.unInit();
+        }
     }
 
 
     private void initView() {
-        wilddog_video_view = (WilddogVideoView)findViewById(R.id.wilddog_video_view);
         iv_goback = (TextView) findViewById(R.id.iv_goback);
         iv_goback.setOnClickListener(this);
         iv_light = (ImageView) findViewById(R.id.iv_light);
@@ -486,8 +395,6 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         iv_takepic = (ImageView) findViewById(R.id.iv_takepic);
         iv_takepic.setOnClickListener(this);
 
-//        iv_switch_audio = (ImageView) findViewById(R.id.iv_switch_audio);
-//        iv_switch_audio.setOnClickListener(this);
 
         progressbar = (ProgressBar) findViewById(R.id.progressbar);
 
@@ -496,8 +403,11 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         iv_layer = (ImageView) findViewById(R.id.iv_layer);
         iv_layer.setOnClickListener(this);
 
-        remote_video_view = (WilddogVideoView) findViewById(R.id.remote_video_view);
+
+        remote_video_view = (TXCloudVideoView) findViewById(R.id.rtmproom_video_remote);
+        local_video_view = (TXCloudVideoView) findViewById(R.id.rtmproom_video_local);
         remote_video_view.setOnTouchListener(this);
+
     }
 
     @Override
@@ -510,42 +420,18 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
             controlCameraLight();
 
         } else if (id == R.id.iv_switch_camera) {
-            if (localStream != null) {
-                localStream.switchCamera();
-            }
-
+            rtcRoom.switchCamera();
         } else if (id == R.id.iv_takepic) {
             if (canTakePic) {
-                localStream.capturePicture(new LocalStream.CaptureListener() {
+                //// TODO: 2018/3/22 拍照上传
+                runOnUiThread(new Runnable() {
                     @Override
-                    public void onCaptureCompleted(final Bitmap bitmap) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                uploadImage(bitmap);
-                            }
-                        });
+                    public void run() {
+                        Bitmap bitmap = null ;
+                        uploadImage(bitmap);
                     }
-
-                    @Override
-                    public void onError(WilddogVideoError wilddogVideoError) {
-                        Log.e(ZCBLConstants.TAG, "ZCBLVideoSurveyActivity---onError: 拍照---->"+wilddogVideoError.getMessage() );
-                    }
-                },false);
+                });
             }
-
-//            case R.id.iv_switch_audio:
-//                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-//                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-//                audioManager.stopBluetoothSco();
-//                audioManager.setBluetoothScoOn(false);
-//                audioManager.setSpeakerphoneOn(false);
-//
-//                Log.i(ZCBLConstants.TAG,"--------是否耳机线连接-------->"+audioManager.isWiredHeadsetOn());
-//                Log.i(ZCBLConstants.TAG,"--------扬声器是否打开-------->"+audioManager.isSpeakerphoneOn());
-//                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开A2DP-------->"+audioManager.isBluetoothA2dpOn());
-//                Log.i(ZCBLConstants.TAG,"--------蓝牙耳机是否打开SCO-------->"+audioManager.isBluetoothScoOn());
-//                break ;
         } else if (id == R.id.iv_layer) {
             iv_layer.setVisibility(View.INVISIBLE);
         }
@@ -557,12 +443,21 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     private void controlCameraLight() {
         if (!isLightOn) {
             iv_light.setImageResource(R.drawable.ic_light_open);
-            localStream.setFlashMode(LocalStream.FlashMode.FLASH_MODE_TORCH);
+            controlCameraLight(!isLightOn);
             isLightOn = true;
         }else{
             iv_light.setImageResource(R.drawable.ic_lignt_close);
-            localStream.setFlashMode(LocalStream.FlashMode.FLASH_MODE_OFF);
+            controlCameraLight(!isLightOn);
             isLightOn = false ;
+        }
+    }
+
+    private void controlCameraLight(boolean isOpen) {
+        //mFlashTurnOn为true表示打开，否则表示关闭
+        if (null != rtcRoom.getLivePusher()) {
+            if (!rtcRoom.getLivePusher().turnOnFlashLight(isOpen)) {
+                Log.e(ZCBLConstants.TAG,"闪光灯打开失败" );
+            }
         }
     }
 
@@ -570,12 +465,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
      * 移除监听
      */
     public void removeSync() {
-        if (null != syncReference) {
-            if (null != childEventListener) {
-                syncReference.removeEventListener(childEventListener);
-            }
-            syncReference = null ;
-        }
+
     }
 
     /**
@@ -594,13 +484,38 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 .setPositiveButton("确认", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-//                        leaveRoom();
                         setResult(VIDEO_SURVEY_IS_OVER);
-                        finish();
+
+                        rtcRoom.exitRoom(new RTCRoom.ExitRoomCallback() {
+                            @Override
+                            public void onError(int errCode, String errInfo) {
+                                Log.e(ZCBLConstants.TAG, "exitRoom failed, errorCode = " + errCode + " errMessage = "+errInfo );
+
+                            }
+
+                            @Override
+                            public void onSuccess() {
+                                Log.i(ZCBLConstants.TAG, "exitRoom Success");
+                                finish();
+                            }
+                        });
                     }
                 });
         builder.show();
 
+    }
+
+    private void retrygetLoginInfo(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("")
+                .setMessage("获取登录信息失败，请重试？")
+                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        getImLoginInfo();
+                    }
+                });
+        builder.show();
     }
 
     /**
@@ -628,9 +543,20 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     @Override
     protected void onStop() {
         super.onStop();
-        leaveRoom();
-        setResult(VIDEO_SURVEY_IS_OVER);
-        finish();
+        local_video_view.onPause();  // mCaptureView 是摄像头的图像渲染view
+        if(null != rtcRoom.getLivePusher()){
+            rtcRoom.getLivePusher().pausePusher(); // 通知 SDK 进入“后台推流模式”了
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        local_video_view.onResume();     // mCaptureView 是摄像头的图像渲染view
+        if(null != rtcRoom.getLivePusher()){
+            rtcRoom.getLivePusher().resumePusher();  // 通知 SDK 重回前台推流
+        }
     }
 
     @Override
@@ -691,4 +617,5 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         }
         return true;
     }
+
 }

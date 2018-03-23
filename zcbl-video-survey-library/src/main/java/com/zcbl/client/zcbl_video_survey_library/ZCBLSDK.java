@@ -8,13 +8,10 @@ import com.tencent.imsdk.TIMLogLevel;
 import com.tencent.imsdk.TIMManager;
 import com.tencent.imsdk.TIMSdkConfig;
 import com.tencent.rtmp.TXLiveBase;
-import com.wilddog.wilddogcore.WilddogApp;
-import com.wilddog.wilddogcore.WilddogOptions;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyConnectTransionActivity;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLCheckUtils;
-import com.zcbl.client.zcbl_video_survey_library.zcbl_native.NativeData;
 
 /**
  * Created by serenitynanian on 2018/1/12.
@@ -36,9 +33,6 @@ public class ZCBLSDK {
                 .setLogPath(Environment.getExternalStorageDirectory().getPath() + "/justfortest/");
         //初始化SDK
         TIMManager.getInstance().init(context, config);
-        // 初始化
-        WilddogOptions syncOptions = new WilddogOptions.Builder().setSyncUrl("https://"+ NativeData.getAppId()+".wilddogio.com").build();
-        WilddogApp.initializeApp(context, syncOptions);
     }
 
     public static void goToVideoSurvey(Context context,ZCBLRequireParamsModel params){

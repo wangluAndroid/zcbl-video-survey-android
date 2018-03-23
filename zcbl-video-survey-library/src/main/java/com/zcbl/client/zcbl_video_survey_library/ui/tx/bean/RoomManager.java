@@ -125,7 +125,7 @@ public class RoomManager {
         this.mPushers = memberHashMap;
     }
 
-    private void updatePushers(final IRTCRoomListener callback,HttpRequests mHttpRequest,final IRTCRoomListener roomListenerCallback){
+    public void updatePushers(HttpRequests mHttpRequest,final IRTCRoomListener roomListenerCallback){
 
         if (roomId == null) return;
 
@@ -142,11 +142,11 @@ public class RoomManager {
                             data.pushers.size(), newMembers.size(), delMembers.size()));
 
                     for (PusherInfo member : delMembers) {
-                        callback.onPusherQuit(member);
+                        roomListenerCallback.onPusherQuit(member);
                     }
 
                     for (PusherInfo member : newMembers) {
-                        callback.onPusherJoin(member);
+                        roomListenerCallback.onPusherJoin(member);
                     }
                 }
             }

@@ -5,17 +5,18 @@
     android:id="@+id/rootView"
     android:orientation="vertical">
 
-    <com.wilddog.video.base.WilddogVideoView
+    <com.tencent.rtmp.ui.TXCloudVideoView
+        android:id="@+id/rtmproom_video_local"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.tencent.rtmp.ui.TXCloudVideoView
         android:visibility="invisible"
-        android:id="@+id/remote_video_view"
+        android:id="@+id/rtmproom_video_remote"
         android:layout_width="180dp"
         android:layout_height="180dp"
         android:layout_alignParentBottom="true" />
-
-    <com.wilddog.video.base.WilddogVideoView
-        android:id="@+id/wilddog_video_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
     <TextView
         android:id="@+id/iv_goback"
