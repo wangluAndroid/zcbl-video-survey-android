@@ -8,6 +8,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
+import com.zcbl.client.zcbl_video_survey_library.ZCBLSDK;
+import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLRequireParamsModel;
+import com.zcbl.client.zcbl_video_survey_library.service.ZCBLCrashHandler;
+import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLTXVideoSurveyConnectTransionActivity;
 import com.zcbl.client.zcbl_video_survey_library.ui.activity.ZCBLVideoSurveyActivity;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLPermissionHelper;
 
@@ -27,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         text.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //final String phoneNum = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
+//                final String phoneNum = "837afe94-e4cb-4bd4-acdf-6c6cbc936045";
 //                final String siSurveyNo = "c7e801c9ebfd4760863dc1cc7807d329";
 //                final String phoneNum = "18800001111";
 //                final String caseAddress = "北京市天安门广场";
@@ -45,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 //                String str = null ;
 //                System.out.println(str.toString());
 
-                startActivity(new Intent(MainActivity.this, ZCBLVideoSurveyActivity.class));
+                startActivity(new Intent(MainActivity.this, ZCBLTXVideoSurveyConnectTransionActivity.class));
             }
         });
     }

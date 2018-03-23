@@ -1,5 +1,6 @@
 package com.zcbl.client.zcbl_video_survey_library.ui.activity;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -25,33 +27,19 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
 import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
-import com.zcbl.client.zcbl_video_survey_library.service.UpdateCallbackInterface;
-import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLToastUtils;
 import com.zcbl.client.zcbl_video_survey_library.ui.customview.ZCBLCustomLoadingDialogManager;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.RTCRoom;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.LoginInfoResponse;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.RTCLoginInitialPresenter;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.RoomManager;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.SelfAccountInfo;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.ILoginInitialListener;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLPermissionHelper;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 
 /**
@@ -59,10 +47,8 @@ import okhttp3.RequestBody;
  * 视频查勘过渡页面
  * 初始化查勘所需资源
  */
-public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity implements View.OnClickListener {
+public class ZCBLTXVideoSurveyConnectTransionActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private String userName = "王雨露";
-    private String avatarUrl = "avatar";
     private ImageView iv_goback;
     private TextView tv_descption;
     private ImageView iv_transition_image ;
@@ -108,13 +94,14 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             Log.e(TAG, "视频建立连接异常，无法正常连接，35sAPP端重置");
             if (1 == what) {
                 startCountdownAndDismissLoading();
-                ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
+                ZCBLToastUtils.showToast(ZCBLTXVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
             }
         }
     };
     private TextView video_transition_title;
     private RelativeLayout video_transition_rl;
     private int thirdNavigatorBarColor;
+    private RTCLoginInitialPresenter rtcRoom;
 
 
     /**
@@ -126,9 +113,15 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_survey_connect_transition);
         initView();
-        dynamicUpdateNavigatorColor();
-        initData();
+//        dynamicUpdateNavigatorColor();
+//        initData();
+        initRTCRoom();
         requestPermissions(false);
+    }
+
+    private void initRTCRoom() {
+        rtcRoom = new RTCLoginInitialPresenter(this);
+        rtcRoom.setLoginInitialListener(new ImplLoginInitial(this));
     }
 
     private void dynamicUpdateNavigatorColor() {
@@ -160,7 +153,6 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
     }
 
     private void initData() {
-
         siSurveyNo = zcblVideoSurveyModel.getSiSurveyNo();
         phoneNum = zcblVideoSurveyModel.getPhoneNum();
     }
@@ -182,17 +174,17 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
     private void goToVideoroom(){
         dismissLoading();
-        Intent intent = new Intent(ZCBLVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
+        Intent intent = new Intent(ZCBLTXVideoSurveyConnectTransionActivity.this, ZCBLVideoSurveyActivity.class);
         intent.putExtra("ZCBLVideoSurveyModel", (Serializable) zcblVideoSurveyModel);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        ZCBLVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
+        ZCBLTXVideoSurveyConnectTransionActivity.this.startActivityForResult(intent, ZCBLConstants.GO_TO_VIDEO_ROOM);
     }
 
 
 
 
     private void requestPermissions(boolean isClick) {
-        int sdk=android.os.Build.VERSION.SDK_INT;
+        int sdk= Build.VERSION.SDK_INT;
         if (null != mHelper) {
             mHelper = null ;
         }
@@ -226,7 +218,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == ZCBLPermissionHelper.PERMISSION_REQUEST_CODE && hasAllPermissionsGranted(grantResults)) {
             isRequireCheck = true;
-//            requestConnect();
+            requestConnect();
         } else {
             isRequireCheck = false;
             showMissingPermissionDialog();
@@ -235,134 +227,75 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
 
     private void requestConnect() {
         showLoading();
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("surveyNo",siSurveyNo);
-            jsonObject.put("accesstoken",phoneNum );
-            jsonObject.put("useApp",0);//0:其他第三方app  1：自己的app
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new UpdateCallbackInterface() {
-            @Override
-            public void onError(final String error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        startCountdownAndDismissLoading();
-                        ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,error);
-                    }
-                });
-            }
-
-            @Override
-            public void onSuccess(final String response) {
-                ZCBLVideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            JSONObject obj = new JSONObject(response);
-                            JSONObject data = obj.optJSONObject("data");
-                            int bindIdleCode = data.optInt("bindIdleCode");
-                            if(200 == bindIdleCode){
-                                String syncCommandNodePath = data.optString("syncCommandNodePath");
-                                syncVideoConnectCommandNodePath = data.optString("syncVideoConnectCommandNodePath");
-                                String videoRoomId = data.optString("videoRoomId");
-                                zcblVideoSurveyModel.setVideoRoomId(videoRoomId);
-                                zcblVideoSurveyModel.setSyncCommandNodePath(syncCommandNodePath);
-                                zcblVideoSurveyModel.setSyncVideoConnectCommandNodePath(syncVideoConnectCommandNodePath);
-                                // TODO: 2018/3/22 进入tx视频房间
-//                                goToVideoroom();
-                                //// TODO: 2018/3/23  重新整合最新逻辑
-                                /**
-                                 * 1.connect接口成功，有空闲坐席
-                                 * 2.获取IM登录信息
-                                 * 3.登录IM
-                                 * 3.获取pushUrl
-                                 * 4.创建房间
-                                 * 5.等待IM
-                                 */
-                                //TODO 1.获取IM登录信息
-                                getImLoginInfo();
-
-                            }else{
-                                startCountdownAndDismissLoading();
-                                ZCBLToastUtils.showToast(ZCBLVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
-                            }
-                            customerServicePhone = obj.optString("customerServicePhone");
-                            if (!TextUtils.isEmpty(customerServicePhone)) {
-                                video_transition_tel.setVisibility(View.VISIBLE);
-                            }
-                        } catch (JSONException e) {
-                            startCountdownAndDismissLoading();
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-        });
+        rtcRoom.getImLoginInfo();
+//        JSONObject jsonObject = new JSONObject();
+//        try {
+//            jsonObject.put("surveyNo",siSurveyNo);
+//            jsonObject.put("accesstoken",phoneNum );
+//            jsonObject.put("useApp",0);//0:其他第三方app  1：自己的app
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//        ZCBLHttpUtils.getInstance().post(ZCBLConstants.VIDEO_CONNECTION_URL,jsonObject, new UpdateCallbackInterface() {
+//            @Override
+//            public void onError(final String error) {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        startCountdownAndDismissLoading();
+//                        ZCBLToastUtils.showToast(ZCBLTXVideoSurveyConnectTransionActivity.this,error);
+//                    }
+//                });
+//            }
+//
+//            @Override
+//            public void onSuccess(final String response) {
+//                ZCBLTXVideoSurveyConnectTransionActivity.this.runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                            JSONObject obj = new JSONObject(response);
+//                            JSONObject data = obj.optJSONObject("data");
+//                            int bindIdleCode = data.optInt("bindIdleCode");
+//                            if(200 == bindIdleCode){
+//                                String syncCommandNodePath = data.optString("syncCommandNodePath");
+//                                syncVideoConnectCommandNodePath = data.optString("syncVideoConnectCommandNodePath");
+//                                String videoRoomId = data.optString("videoRoomId");
+//                                zcblVideoSurveyModel.setVideoRoomId(videoRoomId);
+//                                zcblVideoSurveyModel.setSyncCommandNodePath(syncCommandNodePath);
+//                                zcblVideoSurveyModel.setSyncVideoConnectCommandNodePath(syncVideoConnectCommandNodePath);
+//                                // TODO: 2018/3/22 进入tx视频房间
+////                                goToVideoroom();
+//                                //// TODO: 2018/3/23  重新整合最新逻辑
+//                                /**
+//                                 * 1.connect接口成功，有空闲坐席
+//                                 * 2.获取IM登录信息
+//                                 * 3.登录IM
+//                                 * 3.获取pushUrl
+//                                 * 4.创建房间
+//                                 * 5.等待IM
+//                                 */
+//                                //TODO 1.获取IM登录信息
+//                                getImLoginInfo();
+//
+//                            }else{
+//                                startCountdownAndDismissLoading();
+//                                ZCBLToastUtils.showToast(ZCBLTXVideoSurveyConnectTransionActivity.this,"坐席繁忙，请稍后重试");
+//                            }
+//                            customerServicePhone = obj.optString("customerServicePhone");
+//                            if (!TextUtils.isEmpty(customerServicePhone)) {
+//                                video_transition_tel.setVisibility(View.VISIBLE);
+//                            }
+//                        } catch (JSONException e) {
+//                            startCountdownAndDismissLoading();
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                });
+//            }
+//        });
     }
-
-    /**
-     * 获取IM登录信息
-     */
-    private void getImLoginInfo() {
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .build();
-
-        final MediaType MEDIA_JSON = MediaType.parse("application/json; charset=utf-8");
-
-        final Request request = new Request.Builder()
-                .url(ZCBLConstants.DOMAIN.concat("/get_im_login_info"))//合并多个数组；合并多个字符串
-                .post(RequestBody.create(MEDIA_JSON, "{\"userIDPrefix\":\"android\"}"))
-                .build();
-
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, final IOException e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.w(ZCBLConstants.TAG,"获取登录信息失败，点击重试");
-                        //失败后点击Title可以重试
-                        //// TODO: 2018/3/22  登录失败之后的处理流程
-                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败{%s}", e.getMessage()));
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(final Call call, okhttp3.Response response) throws IOException {
-                String body = response.body().string();
-                Gson gson = new Gson();
-                try {
-                    LoginInfoResponse resp = gson.fromJson(body, LoginInfoResponse.class);
-                    if (resp.code != 0){
-                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败：{%s}", resp.message));
-                    }else {
-                        final SelfAccountInfo selfAccountInfo = new SelfAccountInfo(
-                                resp.userID,
-                                userName,
-                                avatarUrl,
-                                resp.userSig,
-                                resp.accType,
-                                resp.sdkAppID);
-                        Log.w(ZCBLConstants.TAG, "onResponse: "+selfAccountInfo.toString());
-
-//                        doLoginImInit(selfAccountInfo);
-
-                    }
-                } catch (JsonSyntaxException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
 
 
     // 含有全部的权限
@@ -380,10 +313,15 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
      * 启动倒计时 隐藏加载框
      */
     private void startCountdownAndDismissLoading() {
-        if (null != timer) {
-            timer.start();
-        }
-        dismissLoading();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (null != timer) {
+                    timer.start();
+                }
+                dismissLoading();
+            }
+        });
     }
 
 
@@ -399,7 +337,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 isRequireCheck = true ;
-//                finish();
+                finish();
 
             }
         });
@@ -409,8 +347,8 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             public void onClick(DialogInterface dialog, int which) {
                 isRequireCheck = true ;
                 Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse(PACKAGE_URL_SCHEME + ZCBLVideoSurveyConnectTransionActivity.this.getPackageName()));
-                ZCBLVideoSurveyConnectTransionActivity.this.startActivity(intent);
+                intent.setData(Uri.parse(PACKAGE_URL_SCHEME + ZCBLTXVideoSurveyConnectTransionActivity.this.getPackageName()));
+                ZCBLTXVideoSurveyConnectTransionActivity.this.startActivity(intent);
             }
         });
 
@@ -451,6 +389,9 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
             handler.removeMessages(1);
             handler = null ;
         }
+        if (null != rtcRoom) {
+            rtcRoom.destory();
+        }
     }
 
     private void showLoading(){
@@ -473,6 +414,7 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         }
     }
 
+
     /**
      * 恢复UI初始状态
      */
@@ -487,5 +429,81 @@ public class ZCBLVideoSurveyConnectTransionActivity extends AppCompatActivity im
         }
         tv_descption.setText(R.string.text_zuoxi_free);
         video_transition_title.setText(R.string.title_video_connection);
+    }
+
+    private class ImplLoginInitial implements ILoginInitialListener{
+
+        private final Handler handler;
+        private Context mContext ;
+
+        private ImplLoginInitial(Context context) {
+            this.mContext = context;
+            handler = new Handler(Looper.getMainLooper());
+        }
+
+        @Override
+        public void getIMLoginInfoSuccess(SelfAccountInfo selfAccountInfo) {
+//            handler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//
+//                }
+//            });
+            onDebugLog("get im login info:"+selfAccountInfo.toString());
+        }
+
+        @Override
+        public void getIMLoginInfoFailure(int code, String errorInfo) {
+            onDebugLog(String.format("createRoom failed. code: " + code + " errmsg: " + errorInfo));
+            startCountdownAndDismissLoading();
+        }
+
+        @Override
+        public void iMLoginSuccess() {
+            onDebugLog("im login success");
+        }
+
+        @Override
+        public void iMLoginFailure(int code, String errorInfo) {
+            onDebugLog(String.format("createRoom failed. code: " + code + " errmsg: " + errorInfo));
+            startCountdownAndDismissLoading();
+        }
+
+        @Override
+        public void getPushUrlSuccess(String pushUrl) {
+            onDebugLog("get push url success.pushUrl:"+pushUrl);
+        }
+
+        @Override
+        public void getPushUrlFailure(int code, String errorInfo) {
+            onDebugLog(String.format("createRoom failed. code: " + code + " errmsg: " + errorInfo));
+            startCountdownAndDismissLoading();
+        }
+
+        @Override
+        public void createRoomSuccess(final RoomManager roomManager, String roomId) {
+            onDebugLog("creat room success,roomId:"+roomId);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    dismissLoading();
+                    resumeStatus();
+                    Intent intent =  new Intent(ZCBLTXVideoSurveyConnectTransionActivity.this,ZCBLTXVideoSurveyActivity.class);
+                    intent.putExtra("roomManager",roomManager);
+                    mContext.startActivity(intent);
+                }
+            });
+        }
+
+        @Override
+        public void createRoomFailure(int code, String errorInfo) {
+            onDebugLog(String.format("createRoom failed. code: " + code + " errmsg: " + errorInfo));
+            startCountdownAndDismissLoading();
+        }
+
+        @Override
+        public void onDebugLog(String desc) {
+            Log.e(ZCBLConstants.TAG, "onDebugLog: ------>"+desc);
+        }
     }
 }

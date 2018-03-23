@@ -28,9 +28,9 @@ public class HttpRequests {
     private final OkHttpClient okHttpClient;
     private static final MediaType MEDIA_JSON = MediaType.parse("application/json; charset=utf-8");
     private final String domain;
+    public static HttpRequests httpRequests ;
 
-
-    public HttpRequests(String domain) {
+    private HttpRequests(String domain) {
         this.domain = domain;
 
         this.okHttpClient = new OkHttpClient.Builder()
@@ -38,6 +38,17 @@ public class HttpRequests {
                 .readTimeout(5, TimeUnit.SECONDS)
                 .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
+    }
+
+    public static HttpRequests getHttpReqeust(String domain) {
+        if (null == httpRequests) {
+            synchronized (HttpRequests.class) {
+                if(null == httpRequests){
+                    httpRequests = new HttpRequests(domain);
+                }
+            }
+        }
+        return httpRequests;
     }
 
 

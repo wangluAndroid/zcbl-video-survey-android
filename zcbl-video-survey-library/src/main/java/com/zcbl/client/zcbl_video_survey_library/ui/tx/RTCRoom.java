@@ -39,6 +39,8 @@ import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.RoomState;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.SelfAccountInfo;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpRequests;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpResponse;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.IRTCRoomListener;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.IReceiveIMListener;
 import com.zcbl.client.zcbl_video_survey_library.utils.DateUtils;
 
 import java.util.HashMap;
@@ -95,7 +97,8 @@ public class RTCRoom{
         mIReceiveIMListener = (IReceiveIMListener) context;
         mHandler = new Handler(Looper.getMainLooper());
         roomListenerCallback = new RoomListenerCallback(null);
-        mHttpRequest = new HttpRequests("https://jiw5ccnh.qcloud.la/weapp/double_room");
+//        mHttpRequest = new HttpRequests("https://jiw5ccnh.qcloud.la/weapp/double_room");
+        mHttpRequest = HttpRequests.getHttpReqeust(ZCBLConstants.DOMAIN);
         mHeartBeatThread = new HeartBeatThread();
     }
 

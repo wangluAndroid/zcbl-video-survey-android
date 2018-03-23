@@ -2,10 +2,11 @@ package com.zcbl.client.zcbl_video_survey_library.ui.tx.bean;
 
 import android.support.annotation.Nullable;
 
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.IRTCRoomListener;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.IRTCRoomListener;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpRequests;
 import com.zcbl.client.zcbl_video_survey_library.ui.tx.http.HttpResponse;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -16,7 +17,7 @@ import java.util.Map;
  * Created by serenitynanian on 2018/3/21.
  */
 
-public class RoomManager {
+public class RoomManager implements Serializable{
 
     public HashMap<String, PusherInfo> mPushers = new LinkedHashMap<>();
     public String roomId;
@@ -25,6 +26,15 @@ public class RoomManager {
     public String selfUserName;
     public String avatarUrl;
     public int roomState = RoomState.Absent;
+    public String pushUrl ;
+
+    public String getPushUrl() {
+        return pushUrl;
+    }
+
+    public void setPushUrl(String pushUrl) {
+        this.pushUrl = pushUrl;
+    }
 
     public boolean isDestroyed() {
         return roomState == RoomState.Absent;
@@ -80,6 +90,19 @@ public class RoomManager {
 
     public String getSelfUserName() {
         return selfUserName == null ? "null" : selfUserName;
+    }
+
+    @Override
+    public String toString() {
+        return "RoomManager{" +
+                "mPushers=" + mPushers +
+                ", roomId='" + roomId + '\'' +
+                ", roomName='" + roomName + '\'' +
+                ", selfUserID='" + selfUserID + '\'' +
+                ", selfUserName='" + selfUserName + '\'' +
+                ", avatarUrl='" + avatarUrl + '\'' +
+                ", roomState=" + roomState +
+                '}';
     }
 
     public synchronized void clean() {

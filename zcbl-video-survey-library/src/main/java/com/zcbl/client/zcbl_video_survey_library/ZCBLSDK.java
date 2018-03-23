@@ -26,13 +26,13 @@ public class ZCBLSDK {
         instance = context ;
         TXLiveBase.setConsoleEnabled(BuildConfig.DEBUG);
 
-        //初始化SDK基本配置   1400066983
-        TIMSdkConfig config = new TIMSdkConfig(1400066983)
-                .setLogLevel(TIMLogLevel.DEBUG)
-                .enableLogPrint(BuildConfig.DEBUG)
-                .setLogPath(Environment.getExternalStorageDirectory().getPath() + "/justfortest/");
-        //初始化SDK
-        TIMManager.getInstance().init(context, config);
+//        //初始化SDK基本配置   1400066983
+//        TIMSdkConfig config = new TIMSdkConfig(1400066983)
+//                .setLogLevel(TIMLogLevel.DEBUG)
+//                .enableLogPrint(BuildConfig.DEBUG)
+//                .setLogPath(Environment.getExternalStorageDirectory().getPath() + "/justfortest/");
+//        //初始化SDK
+//        TIMManager.getInstance().init(context, config);
     }
 
     public static void goToVideoSurvey(Context context,ZCBLRequireParamsModel params){

@@ -50,6 +50,16 @@
             android:theme="@style/WilddogTheme"
             />
 
+        <activity android:name=".ui.activity.ZCBLTXVideoSurveyConnectTransionActivity"
+            android:theme="@style/ConnectionVideoTheme"
+            android:screenOrientation="portrait"
+            />
+        <activity android:name=".ui.activity.ZCBLTXVideoSurveyActivity"
+            android:screenOrientation="landscape"
+            android:launchMode="singleTop"
+            android:theme="@style/WilddogTheme"
+            />
+
 
         <!--<receiver android:name=".ui.receiver.ZCBLHeadsetReceiver"-->
             <!--android:enabled="true"-->
