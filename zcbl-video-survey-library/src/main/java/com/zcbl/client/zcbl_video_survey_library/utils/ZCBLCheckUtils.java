@@ -57,7 +57,7 @@ public class ZCBLCheckUtils {
             ZCBLToastUtils.showToast(context,"地理详细位置不能为空");
             return null;
         }
-        ZCBLVideoSurveyModel model = new ZCBLVideoSurveyModel(siSurveyNo, phoneNum, longitude, latitude, caseAddress, "", "", "",navigatorBarColor);
+        ZCBLVideoSurveyModel model = new ZCBLVideoSurveyModel(siSurveyNo, phoneNum, longitude, latitude, caseAddress,"","","",null,navigatorBarColor);
         return model;
     }
 }

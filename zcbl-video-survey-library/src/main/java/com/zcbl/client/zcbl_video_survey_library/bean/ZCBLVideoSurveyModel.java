@@ -1,5 +1,7 @@
 package com.zcbl.client.zcbl_video_survey_library.bean;
 
+import org.json.JSONObject;
+
 import java.io.Serializable;
 
 /**
@@ -13,43 +15,52 @@ public class ZCBLVideoSurveyModel implements Serializable {
     private String latitude;
     private String caseAddress;
     private String videoRoomId;
-    private String syncCommandNodePath;
-    private String syncVideoConnectCommandNodePath;
+
     private String navigatorBarColor ;
+    //tx
+    private String customerServiceImAccount;
+    private String customerServicePhone;
+    private JSONObject data;
 
     public ZCBLVideoSurveyModel() {
     }
 
-    public ZCBLVideoSurveyModel(String siSurveyNo, String phoneNum, String longitude, String latitude, String caseAddress, String videoRoomId, String syncCommandNodePath, String syncVideoConnectCommandNodePath, String navigatorBarColor) {
+    public ZCBLVideoSurveyModel(String siSurveyNo, String phoneNum, String longitude, String latitude, String caseAddress, String videoRoomId, String customerServiceImAccount, String customerServicePhone, JSONObject orderData,String navigatorBarColor) {
         this.siSurveyNo = siSurveyNo;
         this.phoneNum = phoneNum;
         this.longitude = longitude;
         this.latitude = latitude;
         this.caseAddress = caseAddress;
         this.videoRoomId = videoRoomId;
-        this.syncCommandNodePath = syncCommandNodePath;
-        this.syncVideoConnectCommandNodePath = syncVideoConnectCommandNodePath;
         this.navigatorBarColor = navigatorBarColor;
+        this.customerServiceImAccount = customerServiceImAccount ;
+        this.customerServicePhone = customerServicePhone ;
+        this.data = orderData ;
     }
 
-    public ZCBLVideoSurveyModel(String siSurveyNo,
-                                String phoneNum,
-                                String longitude,
-                                String latitude,
-                                String caseAddress,
-                                String videoRoomId,
-                                String syncCommandNodePath,
-                                String syncVideoConnectCommandNodePath
-                             ) {
 
-        this.siSurveyNo = siSurveyNo; //查勘号
-        this.phoneNum = phoneNum;//报案人手机号
-        this.longitude = longitude;//经度------浮点型
-        this.latitude = latitude;//纬度-----浮点型
-        this.caseAddress = caseAddress;//事故地点
-        this.videoRoomId = videoRoomId;//视频房间id
-        this.syncVideoConnectCommandNodePath = syncVideoConnectCommandNodePath;//视频连接 指令节点路径
-        this.syncCommandNodePath = syncCommandNodePath;//视频过程中 指令节点路径
+    public String getCustomerServiceImAccount() {
+        return customerServiceImAccount;
+    }
+
+    public void setCustomerServiceImAccount(String customerServiceImAccount) {
+        this.customerServiceImAccount = customerServiceImAccount;
+    }
+
+    public String getCustomerServicePhone() {
+        return customerServicePhone;
+    }
+
+    public void setCustomerServicePhone(String customerServicePhone) {
+        this.customerServicePhone = customerServicePhone;
+    }
+
+    public JSONObject getData() {
+        return data;
+    }
+
+    public void setData(JSONObject data) {
+        this.data = data;
     }
 
     public String getSiSurveyNo() {
@@ -100,21 +111,6 @@ public class ZCBLVideoSurveyModel implements Serializable {
         this.videoRoomId = videoRoomId;
     }
 
-    public String getSyncCommandNodePath() {
-        return syncCommandNodePath;
-    }
-
-    public void setSyncCommandNodePath(String syncCommandNodePath) {
-        this.syncCommandNodePath = syncCommandNodePath;
-    }
-
-    public String getSyncVideoConnectCommandNodePath() {
-        return syncVideoConnectCommandNodePath;
-    }
-
-    public void setSyncVideoConnectCommandNodePath(String syncVideoConnectCommandNodePath) {
-        this.syncVideoConnectCommandNodePath = syncVideoConnectCommandNodePath;
-    }
 
     public String getNavigatorBarColor() {
         return navigatorBarColor;
@@ -123,6 +119,7 @@ public class ZCBLVideoSurveyModel implements Serializable {
     public void setNavigatorBarColor(String navigatorBarColor) {
         this.navigatorBarColor = navigatorBarColor;
     }
+
 
     @Override
     public String toString() {
@@ -133,9 +130,10 @@ public class ZCBLVideoSurveyModel implements Serializable {
                 ", latitude='" + latitude + '\'' +
                 ", caseAddress='" + caseAddress + '\'' +
                 ", videoRoomId='" + videoRoomId + '\'' +
-                ", syncCommandNodePath='" + syncCommandNodePath + '\'' +
-                ", syncVideoConnectCommandNodePath='" + syncVideoConnectCommandNodePath + '\'' +
                 ", navigatorBarColor='" + navigatorBarColor + '\'' +
+                ", customerServiceImAccount='" + customerServiceImAccount + '\'' +
+                ", customerServicePhone='" + customerServicePhone + '\'' +
+                ", data=" + data +
                 '}';
     }
 }

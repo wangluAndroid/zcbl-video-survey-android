@@ -8,7 +8,7 @@ Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 version = "1.0.9" //发布版本号
-group = "com.zcbl.android" //最终引用形式，如compile 'com.zcbl.client:zcbl-video-survey-library:1.0.0'，其中lfilepicker在后面配置
+group = "com.zcbl.android" //最终引用形式，如compile 'com.zcbl.android:zcbl-video-survey-library:1.0.0'，其中lfilepicker在后面配置
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
@@ -79,17 +79,7 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:26.+'
     testCompile 'junit:junit:4.12'
-    //    compile('com.wilddog.client:wilddog-video-room-android:2.3.2') {
-    //        exclude group: "com.squareup.okhttp3", module: "okhttp"
-    //    }
-    //    compile('com.wilddog.client:wilddog-auth-android:latest.release') {
-    ////        exclude group: "com.fasterxml.jackson.core",module:"jackson-databind"
-    //    }
-    //    compile('com.wilddog.client:wilddog-sync-android:latest.release') {
-    ////        exclude group: "com.fasterxml.jackson.core",module:"jackson-databind"
-    //
-    //    }
-    compile(name: 'LiteAVSDK_Professional_4.3.3610', ext: 'aar')
+    compile(name: 'LiteAVSDK_Smart_4.4.3774', ext: 'aar')
     compile 'com.google.code.gson:gson:2.2.4'
     compile files('libs/imsdk.jar')
     compile files('libs/imsdk_group_ext.jar')

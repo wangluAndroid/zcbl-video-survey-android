@@ -1,6 +1,7 @@
 package com.zcbl.client.zcbl_video_survey_library.ui.activity;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,22 +20,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.tencent.rtmp.TXLivePusher;
 import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.zcbl.client.zcbl_video_survey_library.R;
 import com.zcbl.client.zcbl_video_survey_library.ZCBLConstants;
-import com.zcbl.client.zcbl_video_survey_library.bean.ZCBLVideoSurveyModel;
 import com.zcbl.client.zcbl_video_survey_library.service.UpdateCallbackInterface;
 import com.zcbl.client.zcbl_video_survey_library.service.ZCBLHttpUtils;
-import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLBluetoothConnectionReceiver;
-import com.zcbl.client.zcbl_video_survey_library.ui.receiver.ZCBLHeadsetReceiver;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.IReceiveIMListener;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.Impl_IRTCRoomListener;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.RTCRoom;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.LoginInfoResponse;
-import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.SelfAccountInfo;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.PusherInfo;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.bean.RoomManager;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.listener.IVideoDisplayListener;
+import com.zcbl.client.zcbl_video_survey_library.ui.tx.presenter.VideoDisplayPresenter;
 import com.zcbl.client.zcbl_video_survey_library.utils.ZCBLBase64Utils;
 
 import org.json.JSONException;
@@ -42,14 +37,6 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURVEY_IS_OVER;
 
@@ -60,29 +47,15 @@ import static com.zcbl.client.zcbl_video_survey_library.ZCBLConstants.VIDEO_SURV
  * 2.所有的断开只返回到进入界面
  */
 
-public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener,IReceiveIMListener {
-    public final static String DOMAIN = "https://jiw5ccnh.qcloud.la/weapp/double_room";   //测试环境 https://drourwkp.qcloud.la
-    private String userName = "王雨露";
-    private String avatarUrl = "avatar";
-
-    public final Handler uiHandler = new Handler();
-    private boolean isAudioEnable = true;
-    private boolean isVideoEnable = true;
+public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener, IVideoDisplayListener {
     private TextView iv_goback;
     private ImageView iv_light;
     private ImageView iv_switch_camera;
     private ImageView iv_takepic;
     private ProgressBar progressbar;
     private boolean canTakePic = true ;
-    private ZCBLVideoSurveyModel zcblVideoSurveyModel;
-
     private boolean isLightOn = false ;
-    private ImageView iv_switch_audio;
-    private ZCBLHeadsetReceiver zcblHeadsetReceiver;
-    private ZCBLBluetoothConnectionReceiver blueAudioNoisyReceiver;
     private ImageView iv_layer;
-    private boolean isRemoteAttach = false ;
-
     private RelativeLayout rootView;
     private int lastX ;
     private int lastY ;
@@ -95,7 +68,10 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 
     private TXCloudVideoView remote_video_view ;
     private TXCloudVideoView local_video_view;
-    private RTCRoom rtcRoom;
+    private RoomManager roomManager;
+    private VideoDisplayPresenter mPresent;
+    private Handler uiHandler = new Handler();
+    private boolean isRetry = false ;
 
 
     @Override
@@ -103,13 +79,45 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_wilddog_video);
-        zcblVideoSurveyModel = (ZCBLVideoSurveyModel) getIntent().getSerializableExtra("ZCBLVideoSurveyModel");
-        registerBroadcast();
+        roomManager = (RoomManager) getIntent().getSerializableExtra("roomManager");
         initView();
-        initRTCRoom();
-        getImLoginInfo();
+        initPresenter();
+    }
 
-        Log.e(ZCBLConstants.TAG, "onCreate: "+Thread.currentThread());
+
+    private void initPresenter() {
+        //初始化RCTRoom
+        progressbar.setVisibility(View.VISIBLE);
+        mPresent = new VideoDisplayPresenter(this, roomManager);
+        mPresent.setTXCloudView(local_video_view, remote_video_view);
+        mPresent.initIMMessagesListener();
+        mPresent.showLocalStreamToView();
+        mPresent.startPushStream();
+
+    }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (null != local_video_view) {
+            local_video_view.onPause();  // mCaptureView 是摄像头的图像渲染view
+        }
+        if(null != mPresent.getLivePusher()){
+            mPresent.getLivePusher().pausePusher(); // 通知 SDK 进入“后台推流模式”了
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (null != local_video_view) {
+            local_video_view.onResume();     // mCaptureView 是摄像头的图像渲染view
+        }
+        if(null != mPresent.getLivePusher()){
+            mPresent.getLivePusher().resumePusher();  // 通知 SDK 重回前台推流
+        }
     }
 
     @Override
@@ -139,11 +147,23 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
             remote_video_view.setVisibility(View.VISIBLE);
         } else if ("WEB$$closeRemoteWindow".equals(type)) {
             remote_video_view.setVisibility(View.INVISIBLE);
+        } else if ("hangup".equals(type)) {//坐席挂断
+            exitCurrentPage("退出视频成功");
+        } else if ("WEB$$goToConnection".equals(type)) {
+            //展示远端流
+            uiHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mPresent.getRemoteStream();
+                }
+            }, 1 * 1000);
+        } else if ("WEB$$refuseConnection".equals(type)) {
+            exitCurrentPage("系统繁忙，请稍后重试");
         }
     }
 
     private void remoteTakePic() {
-        TXLivePusher livePusher = rtcRoom.getLivePusher();
+        TXLivePusher livePusher = mPresent.getLivePusher();
         if (null != livePusher) {
             livePusher.snapshot(new TXLivePusher.ITXSnapshotListener() {
                 @Override
@@ -154,24 +174,6 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 }
             });
         }
-    }
-
-    private void registerBroadcast() {
-
-        //动态注册耳机插入广播
-//        zcblHeadsetReceiver = new ZCBLHeadsetReceiver();
-//        IntentFilter intentFilter = new IntentFilter();
-//        intentFilter.addAction("android.intent.action.HEADSET_PLUG");
-//        this.registerReceiver(zcblHeadsetReceiver, intentFilter);
-//
-//        //动态注册蓝牙广播
-//        blueAudioNoisyReceiver = new ZCBLBluetoothConnectionReceiver();
-//        //蓝牙状态广播监听
-//        IntentFilter audioFilter = new IntentFilter();
-//        audioFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);//蓝牙设备连接或断开
-//        audioFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);//本机开启、关闭蓝牙开关
-//        this.registerReceiver(blueAudioNoisyReceiver, audioFilter);
-
     }
 
     private void uploadImage(Bitmap bitmap) {
@@ -195,9 +197,9 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 JSONObject json = new JSONObject();
                 try {
                     json.put("photoContent", result);
-                    json.put("longitude", zcblVideoSurveyModel.getLongitude());
-                    json.put("latitude", zcblVideoSurveyModel.getLatitude());
-                    json.put("shotLocation", zcblVideoSurveyModel.getCaseAddress());
+                    json.put("longitude", roomManager.getLongitude());
+                    json.put("latitude", roomManager.getLatitude());
+                    json.put("shotLocation", roomManager.getCaseAddress());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -209,7 +211,6 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                             public void run() {
                                 progressbar.setVisibility(View.GONE);
                                 canTakePic = true ;
-                                String tempStr = "APP$$PHOTO$$ERROR";
                                 //// TODO: 2018/3/22 给web坐席发送消息 告知消息发送失败
                                 Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片失败，请重试",Toast.LENGTH_SHORT).show();
                             }
@@ -227,23 +228,13 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                                     JSONObject object = new JSONObject(response);
                                     JSONObject obj = object.optJSONObject("data");
 
-                                    String originalPhotoUrl = obj.optString("originalPhotoUrl");
-                                    String watermarkPhotoUrl = obj.optString("watermarkPhotoUrl");
-                                    String lon = zcblVideoSurveyModel.getLongitude();
-                                    String lat = zcblVideoSurveyModel.getLatitude();
-
-                                    String tempStr = "APP$$PHOTO$$";
-                                    StringBuilder sb = new StringBuilder(tempStr);
-                                    sb.append(originalPhotoUrl.replaceAll("/","%"))
-                                            .append("&")
-                                            .append(watermarkPhotoUrl.replaceAll("/","%"))
-                                            .append("&")
-                                            .append(lon)
-                                            .append("&")
-                                            .append(lat);
-                                    Log.i(ZCBLConstants.TAG,"-------------upload--string---->"+sb.toString());
-                                    //// TODO: 2018/3/22 通知坐席拍照成功 通过im告知坐席上传的图片信息
-
+                                    String lon = roomManager.getLongitude();
+                                    String lat = roomManager.getLatitude();
+                                    obj.put("longitude", lon);
+                                    obj.put("latitude", lat);
+                                    obj.put("imgurl", "Android");
+                                    //// TODO: 2018/3/27 发送消息给坐席
+                                    mPresent.sendIMToZuoxi(obj.toString(),"takePics");
                                     Toast.makeText(ZCBLVideoSurveyActivity.this,"上传图片成功",Toast.LENGTH_SHORT).show();
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -270,118 +261,17 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
         }
     }
 
-    private void getImLoginInfo() {
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .build();
-
-        final MediaType MEDIA_JSON = MediaType.parse("application/json; charset=utf-8");
-
-        final Request request = new Request.Builder()
-                .url(DOMAIN.concat("/get_im_login_info"))//合并多个数组；合并多个字符串
-                .post(RequestBody.create(MEDIA_JSON, "{\"userIDPrefix\":\"android\"}"))
-                .build();
-
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, final IOException e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.w(ZCBLConstants.TAG,"获取登录信息失败，点击重试");
-                        //失败后点击Title可以重试
-                        //// TODO: 2018/3/22  登录失败之后的处理流程
-                        retrygetLoginInfo();
-                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败{%s}", e.getMessage()));
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(final Call call, okhttp3.Response response) throws IOException {
-                String body = response.body().string();
-                Gson gson = new Gson();
-                try {
-                    LoginInfoResponse resp = gson.fromJson(body, LoginInfoResponse.class);
-                    if (resp.code != 0){
-                        Log.w(ZCBLConstants.TAG,"获取登录信息失败，点击重试");
-                        Log.w(ZCBLConstants.TAG,String.format("[Activity]获取登录信息失败：{%s}", resp.message));
-                    }else {
-                        final SelfAccountInfo selfAccountInfo = new SelfAccountInfo(
-                                resp.userID,
-                                userName,
-                                avatarUrl,
-                                resp.userSig,
-                                resp.accType,
-                                resp.sdkAppID);
-                        Log.w(ZCBLConstants.TAG, "onResponse: "+selfAccountInfo.toString());
-
-                        doLoginImInit(selfAccountInfo);
-
-                    }
-                } catch (JsonSyntaxException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    /**
-     * 进行im登录
-     * @param selfAccountInfo
-     */
-    private void doLoginImInit(SelfAccountInfo selfAccountInfo) {
-        rtcRoom.init(DOMAIN,selfAccountInfo, new RTCRoom.InitCallback() {
-            @Override
-            public void onError(int errCode, String errInfo) {
-
-            }
-
-            @Override
-            public void onSuccess(String userId) {
-                //IM初始化成功
-
-            }
-        });
-
-    }
-
-    private void initRTCRoom() {
-        //初始化RCTRoom
-        rtcRoom = new RTCRoom(this);
-        rtcRoom.setRTCRoomListener(new Impl_IRTCRoomListener());
-        rtcRoom.showLocalStreamToView(local_video_view);
-        rtcRoom.setRemoteView(remote_video_view);
-    }
-
-    private void leaveRoom() {
-        rtcRoom.exitRoom(null);
-        setResult(VIDEO_SURVEY_IS_OVER);
-        finish();
-    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.w(ZCBLConstants.TAG,"-------------ZCBLVideoSurveyActivity----onDestory--------");
-
-        isRemoteAttach = false;
         isLightOn = false;
-
-        if (null != zcblHeadsetReceiver) {
-            unregisterReceiver(zcblHeadsetReceiver);
+        isRetry = false ;
+        if (null != mPresent) {
+            mPresent.unInit();
         }
-
-        if (null != blueAudioNoisyReceiver) {
-            unregisterReceiver(blueAudioNoisyReceiver);
-        }
-
-        if (null != rtcRoom) {
-            rtcRoom.setRTCRoomListener(null);
-            rtcRoom.unInit();
-        }
+        uiHandler = null ;
     }
 
 
@@ -414,21 +304,18 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     public void onClick(View v) {
         int id = v.getId();
         if (id == R.id.iv_goback) {
-            exitRoomSuccess();
-
+            goBack();
         } else if (id == R.id.iv_light) {
             controlCameraLight();
 
         } else if (id == R.id.iv_switch_camera) {
-            rtcRoom.switchCamera();
+            mPresent.switchCamera();
         } else if (id == R.id.iv_takepic) {
             if (canTakePic) {
-                //// TODO: 2018/3/22 拍照上传
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Bitmap bitmap = null ;
-                        uploadImage(bitmap);
+                        remoteTakePic();
                     }
                 });
             }
@@ -454,69 +341,187 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
 
     private void controlCameraLight(boolean isOpen) {
         //mFlashTurnOn为true表示打开，否则表示关闭
-        if (null != rtcRoom.getLivePusher()) {
-            if (!rtcRoom.getLivePusher().turnOnFlashLight(isOpen)) {
+        if (null != mPresent.getLivePusher()) {
+            if (!mPresent.getLivePusher().turnOnFlashLight(isOpen)) {
                 Log.e(ZCBLConstants.TAG,"闪光灯打开失败" );
             }
         }
     }
 
-    /**
-     * 移除监听
-     */
-    public void removeSync() {
 
+    private void goBack() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+        .setTitle("")
+        .setMessage("视频查勘完成，确认退出？")
+        .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        })
+        .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                exitCurrentPageTellZuoXi("退出视频成功");
+            }
+        });
+        builder.show();
+    }
+
+    private void exitCurrentPageTellZuoXi(String params) {
+        mPresent.sendIMToZuoxi("{\"hangup\":\"hangup\"}","goback");
+        mPresent.exitRoom();
+        Intent intent = new Intent();
+        intent.putExtra("callBackParams", params);
+        setResult(VIDEO_SURVEY_IS_OVER,intent);
+        finish();
+    }
+
+    private void exitIM(String params) {
+        mPresent.exitIMLogin();
+        Intent intent = new Intent();
+        intent.putExtra("callBackParams", params);
+        setResult(VIDEO_SURVEY_IS_OVER,intent);
+        finish();
+    }
+
+    private void exitCurrentPage(String params) {
+        mPresent.sendIMToZuoxi("{\"hangup\":\"hangup\"}","goback");
+        mPresent.exitRoom();
+        Intent intent = new Intent();
+        intent.putExtra("callBackParams", params);
+        setResult(VIDEO_SURVEY_IS_OVER,intent);
+        finish();
     }
 
     /**
      * 离开直播间 提醒弹框
      */
-    private void exitRoomSuccess(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("")
-                .setMessage("视频查勘完成，确认退出？")
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+    @Override
+    public void exitRoomSuccess(){
+        onDebugLog("exit room success");
+    }
 
-                    }
-                })
-                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        setResult(VIDEO_SURVEY_IS_OVER);
+    @Override
+    public void exitRoomFailure(int code, String errorInfo) {
+        onDebugLog(String.format("exit room failed. code: " + code + " errmsg: " + errorInfo));
+    }
 
-                        rtcRoom.exitRoom(new RTCRoom.ExitRoomCallback() {
-                            @Override
-                            public void onError(int errCode, String errInfo) {
-                                Log.e(ZCBLConstants.TAG, "exitRoom failed, errorCode = " + errCode + " errMessage = "+errInfo );
-
-                            }
-
-                            @Override
-                            public void onSuccess() {
-                                Log.i(ZCBLConstants.TAG, "exitRoom Success");
-                                finish();
-                            }
-                        });
-                    }
-                });
-        builder.show();
+    @Override
+    public void hangupSuccess() {
+        onDebugLog("hangup success");
 
     }
 
-    private void retrygetLoginInfo(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("")
-                .setMessage("获取登录信息失败，请重试？")
-                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        getImLoginInfo();
-                    }
-                });
-        builder.show();
+    @Override
+    public void hangupFailure(int code, String errorInfo) {
+        onDebugLog(String.format("handup failed. code: " + code + " errmsg: " + errorInfo));
     }
+
+    @Override
+    public void takePicSuccess() {
+        onDebugLog("take picture success");
+    }
+
+    @Override
+    public void takePicFailure(int code, String errorInfo) {
+        onDebugLog(String.format("tack picture failed. code: " + code + " errmsg: " + errorInfo));
+    }
+
+    @Override
+    public void exitIMFailure(int code, String errorInfo) {
+        onDebugLog(String.format("push stream failed. code: " + code + " errmsg: " + errorInfo));
+    }
+
+    @Override
+    public void exitIMSuccess() {
+        onDebugLog("exit im success");
+    }
+
+    @Override
+    public void createRoomSuccess(RoomManager roomManager, String roomId) {
+        onDebugLog("create room success");
+    }
+
+    @Override
+    public void createRoomFailure(int code, String errorInfo) {
+        onDebugLog(String.format("create room failed. code: " + code + " errmsg: " + errorInfo));
+        exitIM("创建视频房间失败");
+    }
+
+    @Override
+    public void sendMessageSuccess(String type) {
+        onDebugLog("send message success;type-->"+type);
+        dispathType(type);
+    }
+
+    private void dispathType(String type) {
+        switch (type) {
+            case "goback":
+                exitCurrentPage("退出视频成功");
+                break ;
+        }
+    }
+
+    @Override
+    public void sendMessageFailure(int code, String errorInfo) {
+        onDebugLog(String.format("send message failed. code: " + code + " errmsg: " + errorInfo));
+    }
+
+    @Override
+    public void onPusherQuit(PusherInfo member) {
+        onDebugLog("----pusher quit--->"+member.toString());
+    }
+
+    @Override
+    public void onPusherJoin(final PusherInfo member) {
+        onDebugLog("----pusher join--->"+member.toString());
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressbar.setVisibility(View.INVISIBLE);
+                mPresent.showRemoteStream(member);
+            }
+        });
+    }
+
+    @Override
+    public void getRemoteStreamSuccess() {
+        onDebugLog("get remote stream success");
+    }
+
+    @Override
+    public void getRemoteStreamFailure(int code, String errorInfo) {
+        onDebugLog(String.format("get remote stream failed. code: " + code + " errmsg: " + errorInfo));
+        //自动重新请求一次
+        if (!isRetry) {
+            isRetry = true;
+            mPresent.getRemoteStream();
+        } else {
+            exitCurrentPageTellZuoXi("获取远端失败");
+        }
+    }
+
+
+    @Override
+    public void onDebugLog(String log) {
+        Log.e(ZCBLConstants.TAG, "onDebugLog: "+log );
+    }
+
+    @Override
+    public void pushStreamSuccess() {
+        onDebugLog("push stream success");
+        //创建房间
+        //创建成功后发送消息
+        mPresent.createRoom();
+    }
+
+    @Override
+    public void pushStreamFailure(int code, String errorInfo) {
+        onDebugLog(String.format("push stream failed. code: " + code + " errmsg: " + errorInfo));
+        exitCurrentPageTellZuoXi("推送本地视频流失败");
+    }
+
 
     /**
      * 监听android物理按键
@@ -527,37 +532,14 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
-            exitRoomSuccess();
+            goBack();
             return false;
         }else {
             return super.onKeyDown(keyCode, event);
         }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-    }
 
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        local_video_view.onPause();  // mCaptureView 是摄像头的图像渲染view
-        if(null != rtcRoom.getLivePusher()){
-            rtcRoom.getLivePusher().pausePusher(); // 通知 SDK 进入“后台推流模式”了
-        }
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        local_video_view.onResume();     // mCaptureView 是摄像头的图像渲染view
-        if(null != rtcRoom.getLivePusher()){
-            rtcRoom.getLivePusher().resumePusher();  // 通知 SDK 重回前台推流
-        }
-    }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
@@ -604,7 +586,7 @@ public class ZCBLVideoSurveyActivity extends AppCompatActivity implements View.O
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) v.getLayoutParams();
                 /**
                  * 将xml中设置的layout_alignParentBottom不起作用
-                 * 第一种方式：
+                 * 第一种方式：œ
                  * lp.setMargins(left,top,0,0);
                  * lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                  * 第二种方式：

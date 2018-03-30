@@ -24,9 +24,9 @@ public class ZCBLConstants {
 //    public static String BASE_URL ="https://survey.zhongchebaolian.com/";//测试环境
 
     public static final String UPLOAD_IMAGE_URL = "boot-zcbl-survey-api/v1/upload/photo";
-    public static final String VIDEO_CONNECTION_URL = "boot-zcbl-survey-api/survey/v1/video/connect";
+    public static final String VIDEO_CONNECTION_URL = "boot-zcbl-survey-api/survey/v2/video/connect";
 
-//    public static final String DOMAIN = "https://jiw5ccnh.qcloud.la/weapp/double_room";
-    public static final String DOMAIN = "https://lvb.qcloud.com/weapp/double_room";
+    public static final String DOMAIN = "https://nweeyr0w.qcloud.la/weapp/double_room";
+//    public static final String DOMAIN = "https://lvb.qcloud.com/weapp/double_room";
 
 }

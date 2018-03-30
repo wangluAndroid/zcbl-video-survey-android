@@ -145,7 +145,7 @@ public class HttpRequests {
     }
 
 
-    public void createRoom (String userID, String roomName,
+    public void createRoom (String roomId,String userID, String roomName,
                             String userName,
                             String userAvatar,
                             String pushURL,
@@ -154,6 +154,7 @@ public class HttpRequests {
         String body = "";
         try {
             body = new JsonBuilder()
+                    .put("roomid", roomId)
                     .put("userID", userID)
                     .put("roomName", roomName)
                     .put("userName", userName)

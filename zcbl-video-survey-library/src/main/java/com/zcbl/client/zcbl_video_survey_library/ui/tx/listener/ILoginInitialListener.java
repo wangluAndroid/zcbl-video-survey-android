@@ -17,10 +17,10 @@ public interface ILoginInitialListener {
     void getPushUrlSuccess(String pushUrl);
     void getPushUrlFailure(int code ,String errorInfo);
 
-    void createRoomSuccess(RoomManager roomManager,String roomId);
-    void createRoomFailure(int code ,String errorInfo);
 
 
+
+    void goToNextPage(RoomManager mRoomManager);
     void onDebugLog(String desc);
 
 }

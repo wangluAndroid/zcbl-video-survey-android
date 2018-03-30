@@ -328,10 +328,13 @@ public class DateUtils {
         return sb.toString();
     }
 
-    public static String convertLongToyyyyMMddHHmmss(long longDate) {
-        Date date = new Date(longDate);
-        String strByDate = getStrByDate(date, "yyyy-MM-dd HH:mm:ss");
-        return strByDate;
+    public static String convertLongToyyyyMMddHHmmss(long timeMillis) {
+        long day = timeMillis / (24 * 60 * 60 * 1000);
+        long hour = (timeMillis / (60 * 60 * 1000) - day * 24);
+        long min = ((timeMillis / (60 * 1000)) - day * 24 * 60 - hour * 60);
+        long s = (timeMillis / 1000 - day * 24 * 60 * 60 - hour * 60 * 60 - min * 60);
+        long sss = (timeMillis - day * 24 * 60 * 60 * 1000 - hour * 60 * 60 * 1000 - min * 60 * 1000 - s * 1000);
+        return (day > 0 ? day + "," : "") + hour + ":" + min + ":" + s + "." + sss;
     }
 
     /**

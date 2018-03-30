@@ -14,6 +14,6 @@ public class AppApplication extends Application {
     public void onCreate() {
         super.onCreate();
         ZCBLSDK.init(this);
-        ZCBLSDK.setDedug(false);
+        ZCBLSDK.setDedug(true);
     }
 }
